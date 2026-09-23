@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
-import { devNull, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, test } from 'vitest';
 import { planChanges, readChanges } from '../../scripts/change-plan.mjs';
@@ -13,8 +13,13 @@ afterEach(() => {
 });
 
 function repository(files = {}) {
-  const cwd = mkdtempSync(join(tmpdir(), 'jev-patterns-changes-'));
-  scratch.add(cwd);
+  const directory = mkdtempSync(join(tmpdir(), 'jev-patterns-changes-'));
+  scratch.add(directory);
+  const cwd = join(directory, 'repo');
+  mkdirSync(cwd);
+  // Git for Windows cannot read Node's device path for os.devNull as a config file.
+  const globalConfig = join(directory, 'global.gitconfig');
+  writeFileSync(globalConfig, '');
   const git = (...args) =>
     execFileSync('git', args, {
       cwd,
@@ -27,7 +32,7 @@ function repository(files = {}) {
         GIT_COMMITTER_NAME: 'Change Contract',
         GIT_COMMITTER_EMAIL: 'contract@example.invalid',
         GIT_CONFIG_NOSYSTEM: '1',
-        GIT_CONFIG_GLOBAL: devNull,
+        GIT_CONFIG_GLOBAL: globalConfig,
       },
     }).trimEnd();
   const write = (path, content) => {

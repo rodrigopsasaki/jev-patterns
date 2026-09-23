@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { devNull, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, test } from 'vitest';
@@ -14,8 +14,13 @@ afterEach(() => {
 });
 
 function repository(files = {}) {
-  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'jev-patterns-check-cli-')));
-  scratch.add(cwd);
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'jev-patterns-check-cli-')));
+  scratch.add(directory);
+  const cwd = join(directory, 'repo');
+  mkdirSync(cwd);
+  // Use an actual empty file; Git for Windows rejects Node's os.devNull device path.
+  const globalConfig = join(directory, 'global.gitconfig');
+  writeFileSync(globalConfig, '');
   const env = {
     ...process.env,
     GIT_AUTHOR_NAME: 'CLI Contract',
@@ -23,7 +28,7 @@ function repository(files = {}) {
     GIT_COMMITTER_NAME: 'CLI Contract',
     GIT_COMMITTER_EMAIL: 'contract@example.invalid',
     GIT_CONFIG_NOSYSTEM: '1',
-    GIT_CONFIG_GLOBAL: devNull,
+    GIT_CONFIG_GLOBAL: globalConfig,
   };
   const git = (...args) =>
     execFileSync('git', args, {
