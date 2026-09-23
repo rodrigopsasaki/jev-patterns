@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="113" height="24" viewBox="0 0 113 24" role="img" aria-label="runtime deps: 0">
+<title>runtime deps: 0</title>
+<clipPath id="round"><rect width="113" height="24" rx="4"/></clipPath>
+<g clip-path="url(#round)"><rect width="91" height="24" fill="#334155"/><rect x="91" width="22" height="24" fill="#16766b"/></g>
+<g fill="#fff" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif" font-size="11" text-anchor="middle"><text x="45.5" y="16">runtime deps</text><text x="102.0" y="16">0</text></g>
+</svg>

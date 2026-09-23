@@ -8,6 +8,14 @@ Jev supplies probabilities over allowed answers. The library measures and descri
 
 Prioritize the data model, composable predicates and exhaustive `match()` before threshold tuning. The seam must survive changes in heuristic cutoffs. Do not add acceptAtFloor, isSafe or shouldProceed: maximumProbabilityAtLeast and application callbacks expose the intended separation.
 
+## Question semantics
+
+A Choice distributes model probability across alternatives for one requested selection. A split can motivate inspecting or retrieving several alternatives, but does not establish that both are correct, that the model is calibrated, or why it is divided. Real-world concepts can overlap even when the question requests one primary label.
+
+For several labels that may apply simultaneously, ask a separate Noul question for each label. Those yes probabilities need not sum to one; normalizing them together changes their meaning. Separate questions do not establish statistical independence. Preserve each proposition and its yes/no distribution. In particular, a Noul near zero has a dominant **no**, so a label suggestion policy must inspect `.yes`, not just the shape or maximum probability.
+
+The v0 README demonstrates clarification, retrieval and label suggestions as caller-defined policies. It does not add a combined multi-label shape or claim that effective counts estimate the number of true answers. This clarification leaves the API and `descriptive-v2` thresholds unchanged. See the provider's [Choice](https://docs.typesafe.ai/primitives/choice) and [Noul](https://docs.typesafe.ai/primitives/noul) contracts.
+
 ## Vocabulary
 
 The current labels describe concentration. `dominant` means one outcome holds most of the probability; `paired` means two substantial unequal shares; `split` means two substantial similar shares; `clustered` means several outcomes hold most of the probability; `flat` means similar probabilities across positive support. These are working names, not a claim that the taxonomy is final.

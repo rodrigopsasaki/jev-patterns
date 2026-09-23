@@ -8,6 +8,8 @@ The 2026-09-23 test-hardening pass also used native sessions: separate Jev wire-
 
 The later Biome/Vitest migration used the same native fallback for runtime-test migration, Git selection/CLI contracts and independent CI review. The parent integrated formatting, affected/full runners, installed-package smoke and conditional CI. Review identified quoted Git paths, clean-build cache isolation, CRLF README parsing and the need to run full verification when the package harness changes. The selected local checks are recorded in terminal output; no Interlock or hosted-CI receipts are claimed.
 
+The visual v0 README pass also used the native fallback: read-only statistics and API reviews plus a bounded installed-package example-test task. Review clarified single-selection Choice versus separate Noul propositions and caught an incorrect Choice metadata path in the draft. No new Interlock graph approval, runtime session or release is claimed.
+
 ## Normal Interlock setup
 
 Use the installed Interlock CLI from a properly configured Herdr session. Copy `.interlock/local.example.yaml` to `.interlock/local.yaml`, choose an authenticated runtime, and use the graph approval and run commands. Local runtime configuration stays outside Git.

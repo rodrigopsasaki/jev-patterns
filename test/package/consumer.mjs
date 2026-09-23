@@ -2,13 +2,152 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const npmCli = process.env.npm_execpath;
 const full = process.env.JEV_PACKAGE_MODE !== 'smoke';
+const readmeAssertions = {
+  quickstart: [
+    "assert.equal(distribution.shape, 'split');",
+    "assert.equal(distribution.first.option, 'password_reset');",
+    'assert.equal(distribution.maxima.length, 1);',
+    "assert.equal(distribution.maxima[0].option, 'password_reset');",
+    "assert.equal(distribution.uniqueMaximum?.option, 'password_reset');",
+    'assert.ok(Math.abs(distribution.gap - 0.06) < 1e-12);',
+  ],
+  support: [
+    "assert.deepEqual(view, { kind: 'clarify', options: ['password_reset', 'account_locked'] });",
+  ],
+  retrieval: [
+    "assert.deepEqual(pagesToFetch, ['reset_2fa', 'lost_phone', 'backup_codes']);",
+    'assert.equal(shortlist.count, 3);',
+    'assert.ok(Math.abs(shortlist.mass - 0.97) < 1e-12);',
+  ],
+  labels: [
+    "assert.deepEqual(suggestedLabels, ['billing', 'refund']);",
+    "assert.equal(response.answers.billing.distribution.shape, 'dominant');",
+    "assert.equal(response.answers.login.distribution.uniqueMaximum?.option, 'no');",
+  ],
+  predicates: ['assert.equal(meetsRoutingPolicy, true);'],
+};
+const readmeAssets = [
+  'assets/distributions.svg',
+  ...['status', 'license', 'node', 'typescript', 'dependencies'].map(
+    (badge) => `assets/badges/${badge}.svg`,
+  ),
+];
+
+function extractReadmeExamples(readme) {
+  const examples = new Map();
+  for (const marker of readme.matchAll(/<!--[ \t]*example:([^\r\n]*?)[ \t]*-->/g)) {
+    const name = marker[1].trim();
+    assert.ok(
+      Object.hasOwn(readmeAssertions, name),
+      `Unknown README example ${JSON.stringify(name)}`,
+    );
+    assert.ok(!examples.has(name), `Duplicate README example ${JSON.stringify(name)}`);
+    const following = readme.slice(marker.index + marker[0].length);
+    const block = following.match(
+      /^[ \t]*\n(?:[ \t]*\n)*[ \t]*```ts[ \t]*\n([\s\S]*?)\n[ \t]*```[ \t]*(?=\n|$)/,
+    );
+    assert.ok(block, `README example ${JSON.stringify(name)} must immediately precede a ts fence`);
+    examples.set(name, block[1]);
+  }
+  assert.deepEqual(
+    [...examples.keys()].sort(),
+    Object.keys(readmeAssertions).sort(),
+    'README must contain each named standalone example',
+  );
+  const tsFences = [...readme.matchAll(/^[ \t]*```ts\b[^\n]*$/gm)];
+  assert.equal(
+    tsFences.length,
+    examples.size,
+    'Every README ts fence needs a named example marker',
+  );
+  return examples;
+}
+
+function assertReadmeImages(readme, paths) {
+  const references = new Map();
+  const referenceKey = (value) => value.trim().replace(/\s+/g, ' ').toLowerCase();
+  for (const definition of readme.matchAll(/^[ \t]*\[([^\]]+)\]:[ \t]*(?:<([^>]+)>|([^\s]+))/gm)) {
+    references.set(referenceKey(definition[1]), definition[2] ?? definition[3]);
+  }
+  const targets = [];
+  for (const image of readme.matchAll(
+    /!\[([^\]]*)\](?:\(\s*(?:<([^>]+)>|([^\s)]+))(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)|\[([^\]]*)\])?/g,
+  )) {
+    const target = image[2] ?? image[3] ?? references.get(referenceKey(image[4] || image[1]));
+    assert.ok(target, `Unresolved README image reference ${JSON.stringify(image[0])}`);
+    targets.push(target);
+  }
+  for (const image of readme.matchAll(/<img\b[^>]*>/gi)) {
+    const source = image[0].match(/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i);
+    assert.ok(source, 'README HTML images must declare a src');
+    targets.push(source[1] ?? source[2] ?? source[3]);
+  }
+  for (const target of targets) {
+    if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(target)) continue;
+    const path = posix.normalize(decodeURIComponent(target.split(/[?#]/, 1)[0]));
+    assert.ok(
+      !posix.isAbsolute(path) && path !== '..' && !path.startsWith('../') && paths.includes(path),
+      `README image ${JSON.stringify(target)} is missing from the package archive`,
+    );
+  }
+}
+
+test('README example markers reject omissions, duplicates, unknown names, and unmarked code', () => {
+  const blocks = Object.keys(readmeAssertions).map(
+    (name) => `<!-- example:${name} -->\n\`\`\`ts\nexport {};\n\`\`\``,
+  );
+  const valid = blocks.join('\n\n');
+  assert.deepEqual([...extractReadmeExamples(valid).keys()], Object.keys(readmeAssertions));
+  assert.throws(() => extractReadmeExamples(blocks.slice(1).join('\n\n')), /each named/);
+  assert.throws(() => extractReadmeExamples(`${valid}\n\n${blocks[0]}`), /Duplicate/);
+  assert.throws(
+    () => extractReadmeExamples(valid.replace('example:support', 'example:unknown')),
+    /Unknown/,
+  );
+  assert.throws(
+    () => extractReadmeExamples(`${valid}\n\n\`\`\`ts\nexport {};\n\`\`\``),
+    /Every README ts fence/,
+  );
+  assert.throws(
+    () =>
+      extractReadmeExamples(
+        valid.replace('<!-- example:support -->', '<!-- example:support -->\nIntervening text'),
+      ),
+    /immediately precede/,
+  );
+});
+
+test('README image validation covers inline, reference, and HTML images', () => {
+  const paths = ['assets/distributions.svg', 'assets/badges/status.svg'];
+  assert.doesNotThrow(() =>
+    assertReadmeImages(
+      [
+        '![Distribution](./assets/distributions.svg?display=1#figure)',
+        '[![Status][status]](https://example.invalid)',
+        '[status]: assets/badges/status.svg',
+        '<img src="assets/distributions.svg" alt="Distribution">',
+        '![External](https://example.invalid/badge.svg)',
+      ].join('\n'),
+      paths,
+    ),
+  );
+  assert.throws(
+    () => assertReadmeImages('![Missing](assets/missing.svg)', paths),
+    /missing from the package/,
+  );
+  assert.throws(
+    () => assertReadmeImages('<img src="assets/missing.svg">', paths),
+    /missing from the package/,
+  );
+  assert.throws(() => assertReadmeImages('![Missing][unknown]', paths), /Unresolved/);
+});
 
 function run(command, args, cwd) {
   const env = { ...process.env };
@@ -32,9 +171,13 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
   assert.ok(paths.includes('dist/index.d.ts'));
   assert.ok(paths.includes('LICENSE'));
   assert.ok(paths.includes('README.md'));
+  for (const asset of readmeAssets)
+    assert.ok(paths.includes(asset), `Missing package asset ${asset}`);
   assert.ok(
-    paths.every((path) =>
-      /^(dist\/[^/]+\.(?:js|d\.ts)|package\.json|README\.md|LICENSE)$/.test(path),
+    paths.every(
+      (path) =>
+        /^(dist\/[^/]+\.(?:js|d\.ts)|package\.json|README\.md|LICENSE)$/.test(path) ||
+        readmeAssets.includes(path),
     ),
     `Unexpected package contents: ${paths.join(', ')}`,
   );
@@ -151,31 +294,25 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
     );
   });
 
-  await t.test('the shipped README examples execute against the installed package', async () => {
-    const readme = (
-      await readFile(join(consumer, 'node_modules/jev-lens/README.md'), 'utf8')
-    ).replaceAll('\r\n', '\n');
-    // These three sections form one runnable example. The later integration
-    // snippet needs an application-supplied Jev client.
-    const introductory = readme.slice(0, readme.indexOf('## Jev integration'));
-    const blocks = [...introductory.matchAll(/```ts\n([\s\S]*?)```/g)].map((match) => match[1]);
-    assert.equal(
-      blocks.length,
-      3,
-      'Keep the introductory README examples under this executable check',
-    );
-    await writeFile(
-      join(consumer, 'readme-example.mjs'),
-      [
-        "import assert from 'node:assert/strict';",
-        ...blocks,
-        "assert.equal(distribution.shape, 'paired');",
-        "assert.equal(description, 'a and b have substantial, unequal shares.');",
-        'assert.equal(distribution.is(concentrated), false);',
-      ].join('\n'),
-    );
-    run(process.execPath, ['readme-example.mjs'], consumer);
+  const readme = (
+    await readFile(join(consumer, 'node_modules/jev-lens/README.md'), 'utf8')
+  ).replaceAll('\r\n', '\n');
+  await t.test('relative README images are present in the installed archive', () => {
+    assertReadmeImages(readme, paths);
   });
+  const examples = extractReadmeExamples(readme);
+  for (const [name, source] of examples) {
+    // Keep assertions requiring Node types out of the declaration consumers.
+    await writeFile(join(testRoot, `readme-${name}.ts`), source);
+    await t.test(`standalone README ${name} executes against the installed package`, async () => {
+      const runtime = `readme-${name}.runtime.ts`;
+      await writeFile(
+        join(consumer, runtime),
+        ["import assert from 'node:assert/strict';", source, ...readmeAssertions[name]].join('\n'),
+      );
+      run(process.execPath, [runtime], consumer);
+    });
+  }
 
   for (const resolution of full ? ['NodeNext', 'Bundler'] : ['NodeNext']) {
     for (const checkedIndex of full ? [true, false] : [true]) {
@@ -195,7 +332,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
                 noEmit: true,
                 skipLibCheck: false,
               },
-              include: ['test/*.test.ts'],
+              include: ['test/*.test.ts', 'test/readme-*.ts'],
             }),
           );
           run(

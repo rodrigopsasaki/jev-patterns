@@ -148,7 +148,7 @@ export function planChanges(files) {
     } else if (typeTest.test(path) || path.startsWith('examples/')) {
       plan.typecheck = true;
       explain('type contract or example changed; run types');
-    } else if (path === 'README.md' || path === 'LICENSE') {
+    } else if (path === 'README.md' || path === 'LICENSE' || /^assets\/.*\.svg$/.test(path)) {
       plan.package = true;
       explain('published content changed; run package smoke');
     } else if (path.startsWith('docs/') || /\.mdx?$/.test(path)) {

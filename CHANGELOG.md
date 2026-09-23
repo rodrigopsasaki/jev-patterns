@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a visual v0 README with local badges, six distribution diagrams and executable application examples. Clarify categorical selection versus separate per-label Noul probabilities; no statistical rules or public APIs change.
+- Include README SVGs in the package and validate image references, example execution and example types against the installed archive. Asset edits select package smoke checks.
 - Add pinned Biome and Vitest, shared Git-aware affected checks, a readable dry-run plan, incremental typecheck caches, and conditional PR/full CI paths. Package smoke runs separately from full replay.
 - Narrow unit imports so parser edits select parser suites. Consolidate nonempty validation and use a branch-free key comparator; retain all numerical cutoffs and result identity contracts.
 - Describe Jev Choice, Noul and Score responses with preserved provider values and raw snapshots.

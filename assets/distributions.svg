@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="1018" viewBox="0 0 1040 1018" role="img" aria-labelledby="title desc">
+<title id="title">Six descriptive probability distribution shapes</title>
+<desc id="desc">Dominant 91,5,3,1. Paired 64,25,7,4. Split 51,45,3,1. Clustered 41,34,22,3. Flat 28,26,24,22. Mixed 60,10,10,10,10. All values are percentages; all bars use the same scale.</desc>
+<rect width="1040" height="1018" rx="24" fill="#f2f5fa"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif" fill="#172b40">
+<text x="32" y="43" font-size="13" font-weight="700" letter-spacing="2" fill="#426072">JEV LENS / DISTRIBUTION ATLAS</text>
+<text x="32" y="78" font-size="28" font-weight="700">See where the probability sits.</text>
+<text x="32" y="103" font-size="16" fill="#516477">Probability by option · the same 0–100% scale in every card</text>
+<g transform="translate(32 122)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">dominant</text>
+<text x="24" y="59" font-size="16" fill="#516477">Most probability on one outcome.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="307.58" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">91%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="16.90" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">5%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="10.14" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">3%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="3.38" height="21" rx="1.69" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">1%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<g transform="translate(532 122)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">paired</text>
+<text x="24" y="59" font-size="16" fill="#516477">Two substantial, unequal shares.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="216.32" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">64%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="84.50" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">25%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="23.66" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">7%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="13.52" height="21" rx="4.00" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">4%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<g transform="translate(32 406)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">split</text>
+<text x="24" y="59" font-size="16" fill="#516477">Two substantial, similar shares.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="172.38" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">51%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="152.10" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">45%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="10.14" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">3%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="3.38" height="21" rx="1.69" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">1%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<g transform="translate(532 406)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">clustered</text>
+<text x="24" y="59" font-size="16" fill="#516477">Several outcomes hold most mass.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="138.58" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">41%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="114.92" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">34%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="74.36" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">22%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="10.14" height="21" rx="4.00" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">3%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<g transform="translate(32 690)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">flat</text>
+<text x="24" y="59" font-size="16" fill="#516477">Similar shares across positive support.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="94.64" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">28%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="87.88" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">26%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="81.12" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">24%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="74.36" height="21" rx="4.00" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">22%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<g transform="translate(532 690)">
+<rect width="476" height="264" rx="16" fill="#fff" stroke="#dce3ec"/>
+<text x="24" y="34" font-size="23" font-weight="700">mixed</text>
+<text x="24" y="59" font-size="16" fill="#516477">Outside the current named patterns.</text>
+<text x="24" y="96" font-size="15" font-weight="600" fill="#516477">A</text>
+<rect x="50" y="80" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="80" width="202.80" height="21" rx="4.00" fill="#137d86"/>
+<text x="448" y="96" text-anchor="end" font-size="16" font-weight="600">60%</text>
+<text x="24" y="125" font-size="15" font-weight="600" fill="#516477">B</text>
+<rect x="50" y="109" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="109" width="33.80" height="21" rx="4.00" fill="#4e64bc"/>
+<text x="448" y="125" text-anchor="end" font-size="16" font-weight="600">10%</text>
+<text x="24" y="154" font-size="15" font-weight="600" fill="#516477">C</text>
+<rect x="50" y="138" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="138" width="33.80" height="21" rx="4.00" fill="#8960ad"/>
+<text x="448" y="154" text-anchor="end" font-size="16" font-weight="600">10%</text>
+<text x="24" y="183" font-size="15" font-weight="600" fill="#516477">D</text>
+<rect x="50" y="167" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="167" width="33.80" height="21" rx="4.00" fill="#b2782d"/>
+<text x="448" y="183" text-anchor="end" font-size="16" font-weight="600">10%</text>
+<text x="24" y="212" font-size="15" font-weight="600" fill="#516477">E</text>
+<rect x="50" y="196" width="338" height="21" rx="4" fill="#edf1f6"/>
+<rect x="50" y="196" width="33.80" height="21" rx="4.00" fill="#617483"/>
+<text x="448" y="212" text-anchor="end" font-size="16" font-weight="600">10%</text>
+<line x1="50" y1="235" x2="388" y2="235" stroke="#cbd5e1"/>
+<text x="50" y="251" font-size="11" fill="#617483">0</text>
+<text x="219" y="251" font-size="11" fill="#617483" text-anchor="middle">50</text>
+<text x="388" y="251" font-size="11" fill="#617483" text-anchor="end">100%</text>
+</g>
+<text x="32" y="993" font-size="15" fill="#516477">Shapes describe the supplied distribution. Your question and application give it meaning.</text>
+</g>
+</svg>

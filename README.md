@@ -1,102 +1,232 @@
 # jev-lens
 
-Describe how probability is distributed across outcomes. Jev provides probabilities; this library exposes their concentration and spread; applications interpret those observations in context.
+![Status: v0 prototype](assets/badges/status.svg)
+[![License: MIT](assets/badges/license.svg)](LICENSE)
+![Node: 24.14 or newer](assets/badges/node.svg)
+![TypeScript: typed API](assets/badges/typescript.svg)
+![Runtime dependencies: zero](assets/badges/dependencies.svg)
 
-An independent, experimental TypeScript library with no runtime dependencies or network calls. MIT licensed. The working name and API are provisional; nothing is published to npm or GitHub.
+**Give a probability distribution a vocabulary. Keep its meaning in context.**
 
-## Describe the distribution
+Turn Jev responses into recognizable shapes, typed observations, and application code you can read. Describe concentration, preserve alternatives, and decide what to do in your own code.
 
+Independent TypeScript library. ESM. No runtime dependencies or network calls. This is a working **v0 prototype**, currently private at `0.0.0`; it has not been published to npm or GitHub. Names and thresholds remain provisional.
+
+## Start with the whole distribution
+
+A customer cannot sign in. Your model was asked which **one** explanation best fits the message:
+
+<!-- example:quickstart -->
 ```ts
 import { analyze } from 'jev-lens';
 
-const distribution = analyze({ a: 0.64, b: 0.25, c: 0.07, d: 0.04 });
-
-distribution.shape;              // "paired"
-distribution.first;              // { option: "a", probability: 0.64 }
-distribution.second;             // { option: "b", probability: 0.25 }
-distribution.gap;                // 0.39
-distribution.uniqueMaximum;      // The sole maximum; null when maxima are tied.
-distribution.metrics.firstTwoProbability; // 0.89
-```
-
-Working vocabulary:
-
-| Shape | Example (%) | Description |
-| --- | --- | --- |
-| dominant | 91 / 5 / 3 / 1 | Most probability on one outcome |
-| paired | 64 / 25 / 7 / 4 | Two substantial, unequal shares |
-| split | 51 / 45 / 3 / 1 | Two substantial, similar shares |
-| clustered | 41 / 34 / 22 / 3 | Several outcomes hold most of the probability |
-| flat | 28 / 26 / 24 / 22 | Similar probabilities across positive support |
-| mixed | 60 / 10 / 10 / 10 / 10 | No named pattern matches the current profile |
-
-`paired` and `split` describe concentration on two outcomes, while keeping the remaining probability visible. These terms describe the distribution, not correctness, permission or a selected outcome. `mixed` keeps the limits of the current vocabulary explicit.
-
-## Match with typed observations
-
-```ts
-const description = distribution.match({
-  dominant: d => `${d.uniqueMaximum.option} contains most of the probability.`,
-  paired: d => `${d.pair[0].option} and ${d.pair[1].option} have substantial, unequal shares.`,
-  split: d => `${d.pair[0].option} and ${d.pair[1].option} have substantial, similar shares.`,
-  clustered: () => 'Several outcomes contain most of the probability.',
-  flat: () => 'The positive probabilities are similar in size.',
-  mixed: () => 'No named concentration pattern matches.',
+const distribution = analyze({
+  password_reset: 0.51,
+  account_locked: 0.45,
+  outage: 0.03,
+  other: 0.01,
 });
+
+distribution.shape;                       // 'split'
+distribution.first.option;                // 'password_reset'
+distribution.gap;                         // approximately 0.06
+distribution.metrics.firstTwoProbability; // 0.96
+distribution.prominent.count;             // 2 prominent alternatives
 ```
 
-Option names remain `"a" | "b" | "c" | "d"` throughout. Both paired and split callbacks expose a typed pair. Dominant guarantees a non-null uniqueMaximum; split can include tied maxima.
+The first option is available, but so is the fact that almost as much probability sits on the second. Option names remain a TypeScript literal union throughout the result.
 
-`match()` requires every shape, narrows each callback's argument, and preserves the union of callback return values, including promises. It invokes exactly one handler. Exceptions and rejected promises belong to the caller; no fallback action is invented. Callbacks receive the distribution view; provider metadata remains available on the enclosing parsed answer. Callers can return domain names through the same method.
+## Six ways probability can be distributed
 
-## Predicates describe structure
+![Six distribution shapes, with each bar on the same 0–100 percent scale. Exact values and descriptions follow.](assets/distributions.svg)
 
+| Shape | Example (%) | What it describes |
+| --- | --- | --- |
+| `dominant` | 91 / 5 / 3 / 1 | Most probability sits on one outcome. |
+| `paired` | 64 / 25 / 7 / 4 | Two substantial, unequal shares. |
+| `split` | 51 / 45 / 3 / 1 | Two substantial, similar shares. |
+| `clustered` | 41 / 34 / 22 / 3 | Several outcomes hold most of the probability. |
+| `flat` | 28 / 26 / 24 / 22 | Similar probabilities across positive support. |
+| `mixed` | 60 / 10 / 10 / 10 / 10 | No named pattern matches the current profile. |
+
+These are descriptive heuristics over the supplied probabilities. `mixed` makes room for distributions the vocabulary does not capture. The actual probabilities, ties, and remaining mass stay available under every shape.
+
+## The question changes the interpretation
+
+**“Which one?” and “Which ones?” need different inputs.**
+
+| What you ask | What the scores describe | A useful application response |
+| --- | --- | --- |
+| “Which explanation best fits this login failure?” | Alternatives competing for one selection | Ask for a detail that distinguishes the main alternatives. |
+| “Which article is the best starting point?” | Alternatives competing for one starting point | Fetch several plausible starting points before composing a response. |
+| “Does this ticket mention billing? Does it request a refund?” | A separate yes/no proposition for each label | Suggest several labels, each from its own yes probability. |
+
+In a Choice response, `billing: 0.51, refund: 0.45, other: 0.04` does **not** establish that both billing and refund apply. It describes the model's allocation across options for the question it received. The concepts can overlap in the real world; the question still requests one selection.
+
+For multiple applicable labels, ask one Noul question per label. `billing: 0.94` and `refund: 0.89` can both be high. Do not normalize those scores into one distribution: each describes a different proposition. Separate questions do not imply statistical independence.
+
+This follows Jev's documented [Choice](https://docs.typesafe.ai/primitives/choice) and [Noul](https://docs.typesafe.ai/primitives/noul) semantics. The library cannot recover a missing question or turn concentration into evidence of correctness. A dominant distribution can still favor the wrong answer, and the right answer might not be among the supplied options.
+
+## Things you can build
+
+### Ask a useful follow-up
+
+In a support UI, map the shape to a view. For a split result, offer the two main explanations as clarification options. These handlers define this application's behavior; the library calls exactly one.
+
+<!-- example:support -->
 ```ts
-import { allOf, dominant, gapAtLeast, split } from 'jev-lens';
+import { analyze } from 'jev-lens';
 
-const concentrated = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
-distribution.is(concentrated);
-split({ gap: 0.08 })(distribution);
+const issue = analyze({
+  password_reset: 0.51,
+  account_locked: 0.45,
+  outage: 0.03,
+  other: 0.01,
+});
+
+const view = issue.match({
+  dominant: (d) => ({ kind: 'suggest', option: d.uniqueMaximum.option } as const),
+  paired: (d) => ({ kind: 'compare', options: d.pair.map((x) => x.option) } as const),
+  split: (d) => ({ kind: 'clarify', options: d.pair.map((x) => x.option) } as const),
+  clustered: (d) => ({ kind: 'choose-topic', options: d.prominent.items.map((x) => x.option) } as const),
+  flat: () => ({ kind: 'ask-for-details' } as const),
+  mixed: () => ({ kind: 'manual-review' } as const),
+});
+
+// { kind: 'clarify', options: ['password_reset', 'account_locked'] }
+// A UI can now ask: “Do you need to reset your password, or is your account locked?”
 ```
 
-Predicates are ordinary functions. Compose them with `allOf`, `anyOf` and `not`, or write one yourself. They can overlap: a flat distribution can also satisfy `clustered()`. Customizing a predicate does not change the assigned shape or narrow it to a different TypeScript variant. Application policy lives in the calling code.
+Every shape is required. Each callback receives a narrowed type: `dominant` has a non-null `uniqueMaximum`; `paired` and `split` have a two-item `pair`. The return type is the union of your view objects. Promises and exceptions are preserved too.
 
-## Jev integration
+### Fetch a shortlist before answering
 
+Ask which **one** help article is the best starting point. If probability is spread across several, retrieve a shortlist rather than build the answer around the first article alone.
+
+<!-- example:retrieval -->
+```ts
+import { massSet } from 'jev-lens';
+
+const shortlist = massSet({
+  reset_2fa: 0.41,
+  lost_phone: 0.34,
+  backup_codes: 0.22,
+  other: 0.03,
+}, 0.8);
+
+const pagesToFetch = shortlist.options.map((item) => item.option);
+// ['reset_2fa', 'lost_phone', 'backup_codes']
+
+shortlist.mass;         // approximately 0.97
+shortlist.excludedMass; // approximately 0.03
+```
+
+This returns a ranked prefix reaching the requested model probability mass within numeric tolerance, including ties at its boundary. Here two articles cover only 75%, so the third is included. The 80% target is this application's retrieval policy; it is not a measured recall guarantee or proof that those articles contain the answer.
+
+### Suggest every applicable label
+
+Ask “Does this ticket mention billing?”, “Does it request a refund?”, and “Does it mention a login problem?” as separate Noul questions. Here is a fabricated decoded response:
+
+<!-- example:labels -->
 ```ts
 import { parse } from 'jev-lens';
 
-const response = parse(await jevJudge(callContext));
-const distribution = response.answers.ownership;
+const response = parse({
+  model: 'synthetic',
+  usage: { input_tokens: 0, output_tokens: 0 },
+  answers: {
+    billing: { type: 'noul', noul: 0.94 },
+    refund: { type: 'noul', noul: 0.89 },
+    login: { type: 'noul', noul: 0.08 },
+  },
+});
+
+// Illustrative application policy, to evaluate on your own labeled examples.
+const suggestAt = 0.8;
+const suggestedLabels = Object.entries(response.answers)
+  .filter(([, answer]) => answer.yes >= suggestAt)
+  .map(([label]) => label);
+// ['billing', 'refund']
+
+response.answers.billing.distribution.shape; // 'dominant', toward yes
+response.answers.login.distribution.shape;   // 'dominant', toward no
 ```
 
-With a typed Jev response, known question IDs, answer kinds and option names survive parsing. Choice answers expose `match()`, `is()`, `shape` and the measurements directly. For unknown JSON or open answer dictionaries, lookups remain potentially missing and answer-kind checks remain necessary.
+Both the strong yes and the strong no are concentrated. **Use `.yes` to suggest a label; `dominant` alone does not tell you the direction.** Each Noul retains `.yes`, `.no`, and its own binary `.distribution`. There is no combined shape for this collection of labels in v0.
 
-Noul retains yes and no; Score retains ordered-level data. Their categorical views are under `.distribution`. Shape labels alone do not describe ordinal distance between Score levels. The adapter validates runtime input and preserves the provider's original choice, confidence and raw snapshots. Static key preservation assumes the typed probability map describes its actual enumerable keys.
+### Express a more specific policy
 
-## Measurements and provisional thresholds
+Shapes are useful shorthand. Predicates let you state your application's requirements directly:
 
-`sorted` holds descending probabilities. `first` is always available; ordering tied entries does not create a unique maximum. `maxima` retains ties, and `uniqueMaximum` is null for a tie. `second` is null only when there is one entry.
+<!-- example:predicates -->
+```ts
+import { allOf, analyze, dominant, gapAtLeast } from 'jev-lens';
 
-`prominent` groups outcomes above a configurable fraction of the maximum, with `items`, `count`, `probability` and `remainingProbability`. This is a descriptive subset, not a count of valid answers. Advanced statistics remain under `metrics`; applied defaults and numerical tolerances remain under `profile`.
+const route = analyze({ billing: 0.91, refunds: 0.05, login: 0.03, other: 0.01 });
+const routingPolicy = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
+const meetsRoutingPolicy = route.is(routingPolicy); // true
+```
 
-Thresholds are provisional and isolated in `src/predicates.ts`. This revision changes the vocabulary without retuning classification. The next iteration can improve the names and their distinctions while keeping the data/predicate/match contract intact.
+Predicates are ordinary functions. Compose them with `allOf`, `anyOf`, and `not`, or supply your own. They can overlap, and changing a predicate does not relabel the distribution. These cutoffs are an example policy to evaluate against the costs of incorrect routing.
 
-In the repository checkout, see [the design](docs/proposal.md), [public types](src/model.ts), [runnable example](examples/shapes.ts), [domain example](examples/ownership.ts) and [compile-time contracts](test/types.test.ts). These development references are excluded from the package archive.
+## Connect a Jev response
 
-## Development
+Replace a synthetic response with your decoded API result: `const response = parse(await jevJudge(callContext))`. `jevJudge` stands for your application's Jev client call; it is not exported by this package.
 
-Node 24.14 or newer is required. The package builds ESM JavaScript and TypeScript declarations; the API remains experimental.
+| Answer kind | What `parse()` exposes |
+| --- | --- |
+| Choice | Shape, measurements, `.match()` and `.is()` directly on the answer, alongside the original `.choice`, `.confidence`, and `.raw`. |
+| Noul | `.yes`, `.no`, and the yes/no view under `.distribution`. |
+| Score | Level legend, provider score/confidence, `.expectedLevel`, and the categorical view under `.distribution`. |
+
+With typed input, known question IDs, answer kinds, and option names survive parsing. With unknown JSON or an open dictionary, check for a missing answer and narrow its kind before use. Invalid input throws a `TypeError`. Input is preserved, including raw snapshots and provider metadata.
+
+Score levels are ordered. A categorical shape by itself cannot distinguish probability on adjacent levels from probability on distant levels; retain the legend and inspect the levels for that use case.
+
+## What v0 includes
+
+| API | Purpose |
+| --- | --- |
+| `analyze(probabilities, options?)` | Describe one normalized probability map. Values must be in `[0, 1]` and sum to 1 within the reported tolerance. |
+| `parse(response, options?)` | Validate decoded Jev JSON and add typed distribution views. |
+| `.match(handlers)` | Map all six shapes to your application's values or actions. |
+| `.is(predicate)` | Test structure using a supplied function. |
+| `massSet(probabilities, targetMass)` | Keep a ranked prefix reaching a requested mass within numeric tolerance, retaining boundary ties. |
+
+`sorted`, `first`, `second`, `maxima`, `uniqueMaximum`, and `gap` expose rank and ties. Sorting tied entries never creates a unique maximum. `prominent` groups positive-probability outcomes at least a configurable fraction of the maximum, within numeric tolerance; `massSet` groups by accumulated mass.
+
+`metrics.effectiveOptions` provides Shannon and Simpson effective counts: how spread out this one distribution is, expressed on the scale of equally weighted alternatives. It does **not** estimate how many answers are true or how many labels apply. `prominent.count` is also a descriptive count, not a validity count.
+
+The applied heuristics and numerical tolerances are recorded under `.profile` (`descriptive-v2`). Thresholds remain provisional. Changes to classification semantics require a new profile version. Multi-label aggregation, calibration, and ordinal distance analysis remain outside the current API.
+
+Explore the [public types](src/model.ts), [design](docs/proposal.md), and [examples](examples/shapes.ts) in the repository. Development files are excluded from the package archive.
+
+## Try the prototype locally
+
+Node 24.14+ and TypeScript 5.9.3+ are the current support floor. No npm install command for a published package exists yet.
+
+From this checkout:
 
 ```sh
 npm ci --ignore-scripts
-npm run check
 npm run demo
-npm run demo:distributions
+npm pack
 ```
 
-The package is not on npm yet. To try the consumer examples above, run `npm pack` in this checkout, then install the resulting `jev-lens-0.0.0.tgz` by its path in another project. Its public import is `jev-lens`; checkout examples under `examples/` run directly from source.
+In a separate project, install the resulting `jev-lens-0.0.0.tgz` by its local path. The public import is `jev-lens`. The tarball includes compiled ESM JavaScript, declarations, this README, and its visual assets.
 
-`npm run check` runs Biome and the checks affected by staged, unstaged and untracked changes. Use `npm run check -- --since origin/main` for a branch, or `npm run check:plan` to inspect the selection. Vitest follows module dependencies; source changes also receive type checks and a small installed-package test. `npm run check:full` adds complete coverage and full runtime/declaration replay against the installed tarball. Tests use synthetic responses and seeded distributions; no Jev account or network calls are needed after development dependencies are installed.
+## Development and checks
 
-Ordinary PRs use one affected-check job. Full CI on `main`, release tags, manual runs and broad changes covers Node 24.14/24/26 and Linux/macOS/Windows. Remote CI results will be available after publication to GitHub. See [test contracts](docs/testing.md), [contributing](CONTRIBUTING.md) and the [release policy](docs/release-policy.md). The package remains private while names and the first public release are reviewed. This project is not affiliated with TypeSafe AI.
+```sh
+npm run check                     # changed worktree: Biome + affected checks
+npm run check -- --since main     # branch changes from the merge base
+npm run check:plan                # inspect selection without running checks
+npm run test:watch                # affected tests while editing
+npm run check:full                # complete coverage and installed-package checks
+```
+
+Tests fabricate Jev responses and exercise mathematical invariants, numeric boundaries, malformed inputs, typed consumers, and package contracts. The five TypeScript examples in this README execute and typecheck against the installed tarball.
+
+Ordinary PRs select affected checks. Broad changes, `main` pushes, release tags, and manual runs select the full Node/platform matrix. Hosted CI results will be available after GitHub publication. See [testing](docs/testing.md), [contributing](CONTRIBUTING.md), [changes](CHANGELOG.md), and the [release policy](docs/release-policy.md).
+
+MIT licensed. Independent project, not affiliated with TypeSafe AI.

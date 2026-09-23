@@ -23,7 +23,7 @@ npm run check:full                       # complete integration/release verifica
 | `src/**` | Biome on changed files, affected Vitest suites, both typecheck configurations, installed-package smoke |
 | Runtime tests or test helpers | Biome and affected Vitest suites; types for typed helpers |
 | Type-contract fixtures or examples | Biome and typechecking |
-| README or license | Installed-package smoke |
+| README, license or shipped SVG assets | Installed-package smoke |
 | Other documentation | No runtime checks |
 | Dependencies, build/tooling/CI configuration, package-harness changes, deleted dependencies or unknown paths | Full gate |
 
@@ -52,7 +52,7 @@ Unit suites import implementation modules so a parser edit does not mark every m
 
 `typecheck` checks the complete program under both index-access settings. Each configuration has a separate incremental cache under `node_modules/.cache/tsc`; affected source files are not typechecked in isolation. Artifact builds explicitly disable incremental compilation, so removing `dist` cannot preserve stale build output.
 
-`test:package:smoke` cleans and compiles the package, creates a tarball, installs it offline with lifecycle scripts disabled, checks the archive allowlist/public exports, parses all three Jev answer kinds in native Node, executes the shipped README examples and checks NodeNext declarations. It does not replay the full runtime suite.
+`test:package:smoke` cleans and compiles the package, creates a tarball, installs it offline with lifecycle scripts disabled, checks the archive allowlist/public exports and README image references, parses all three Jev answer kinds in native Node, executes all five named README examples and checks their types alongside NodeNext declarations. It does not replay the full runtime suite.
 
 `test:package` additionally replays every library runtime contract against installed JavaScript and checks declarations in all four NodeNext/Bundler and checked/unchecked-index combinations. The artifact harness intentionally uses native Node rather than a transforming runner. Shared suites use Node assertions and Vitest's `test` function, translated to `node:test` in the isolated consumer; unsupported Vitest imports fail. The replay requires nonzero executed tests and no failures, skips, cancellations or todo tests. Temporary consumers are removed after completion.
 

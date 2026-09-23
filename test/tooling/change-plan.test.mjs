@@ -183,6 +183,8 @@ describe('planChanges', () => {
     ['examples/demo.ts', { ...none, lint: true, typecheck: true }],
     ['README.md', { ...none, package: true }],
     ['LICENSE', { ...none, package: true }],
+    ['assets/distributions.svg', { ...none, package: true }],
+    ['assets/badges/status.svg', { ...none, package: true }],
     ['test/package/consumer.mjs', full],
     ['test/package/consumer.ts', full],
     ['src/index.ts', { ...none, lint: true, typecheck: true, unit: true, package: true }],
