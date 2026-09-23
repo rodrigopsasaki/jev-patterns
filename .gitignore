@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tgz
+.interlock/local.yaml
+.interlock/journal/
+.interlock/receipts/
+.worktrees/
+.DS_Store

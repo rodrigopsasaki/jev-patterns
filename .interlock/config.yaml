@@ -1,0 +1,10 @@
+interlock: config@v0
+standing_gates:
+  - id: tests
+    kind: command
+    run: npm test
+  - id: whitespace
+    kind: command
+    run: git diff --check
+substrate:
+  address: none

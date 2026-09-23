@@ -1,0 +1,9 @@
+interlock: local@v0
+runtime:
+  kind: claude
+  args: []
+worktree_root: .worktrees
+lease_ms: 900000
+run_timeout_ms: 1800000
+substrate:
+  address: none

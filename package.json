@@ -1,0 +1,16 @@
+{
+  "name": "jev-lens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Human-readable interpretations of Jev probability distributions",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=24.14" },
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "demo": "node examples/distributions.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": { "typescript": "^5.9.3" }
+}

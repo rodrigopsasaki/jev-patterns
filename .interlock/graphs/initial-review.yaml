@@ -1,0 +1,42 @@
+interlock: graph@v0
+id: initial-review
+ask: >
+  Independently review the statistical semantics and public API of a small open-source
+  Jev response interpretation library. Preserve the distinction between probability
+  concentration, contender selection, and real-world correctness.
+derivation:
+  kind: agent
+  runtime: codex
+  model: unknown
+read: >
+  Two independent review sessions, each confined to a report and synthetic examples.
+  The parent integrates findings. Do not publish, merge, use live Jev data, alter
+  credentials, install a runtime, or change product source code in these sessions.
+gates:
+  - id: approved
+    kind: human
+nodes:
+  - id: statistics
+    acceptance: >
+      docs/reviews/statistics.md audits contender rules, shape thresholds, mass sets,
+      effective counts, ties, zero padding and score semantics. Each concern has a
+      concrete counterexample and recommendation. Distinguish mathematical facts
+      from descriptive heuristics and calibration claims. Run synthetic checks.
+    depends_on: []
+    gates:
+      - id: report
+        kind: command
+        run: node scripts/check-review.mjs statistics
+        expect_output: Review structure checked
+  - id: api
+    acceptance: >
+      docs/reviews/api.md reviews the public API, Jev wire adapter, unknown input
+      handling, prototype safety, determinism, async call ergonomics and publication
+      readiness. Each concern includes a concrete input and recommendation. Keep
+      the package independent of Jev HTTP calls and preserve raw provenance.
+    depends_on: []
+    gates:
+      - id: report
+        kind: command
+        run: node scripts/check-review.mjs api
+        expect_output: Review structure checked
