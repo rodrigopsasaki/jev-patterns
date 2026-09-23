@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add `inspectAnswer()` for individual Choice, Noul, and Score answers, including adapters with nullable confidence and distributions. Preserve literal option types, raw snapshots, predicates, and exhaustive shape matching.
+- Distinguish available, missing, unavailable, and invalid answers. Return structured issue paths and codes for expected data failures while allowing invalid options and executable-input errors to throw.
+- Share answer validation with strict `parse()` without weakening its wire contract. Distribution thresholds, tolerances, and the `descriptive-v2` profile are unchanged.
+- Add synthetic adapter and batch contracts, nullable-input type checks, and an installed-package README example.
+
 ## 0.1.0 — 2026-09-23
 
 - Prepare the first experimental GitHub release as `jev-patterns`. The working name `jev-lens` was already registered on npm. Add public repository metadata, CI links and a compiled release tarball; npm publication remains separate.

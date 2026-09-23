@@ -32,6 +32,12 @@ const readmeAssertions = {
     "assert.equal(response.answers.login.distribution.uniqueMaximum?.option, 'no');",
   ],
   predicates: ['assert.equal(meetsRoutingPolicy, true);'],
+  inspection: [
+    "assert.equal(inspected.kind, 'available');",
+    "assert.equal(inspected.answer.shape, 'split');",
+    'assert.equal(inspected.answer.confidence, null);',
+    "assert.deepEqual(inspected.answer.pair.map((item) => item.option), ['S1', 'S2']);",
+  ],
 };
 const readmeAssets = [
   'assets/distributions.svg',
@@ -261,7 +267,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
       import * as api from 'jev-patterns';
       assert.deepEqual(Object.keys(api).sort(), [
         'allOf', 'analyze', 'anyOf', 'clustered', 'dominant', 'flat', 'gapAtLeast',
-        'massSet', 'maximumProbabilityAtLeast', 'not', 'paired', 'parse', 'split',
+        'inspectAnswer', 'massSet', 'maximumProbabilityAtLeast', 'not', 'paired', 'parse', 'split',
       ].sort());
       const parsed = api.parse({ model: 'synthetic', usage: { input_tokens: 0, output_tokens: 0 }, answers: {
         route: { type: 'choice', choice: 'a', confidence: 0.3, probabilities: { a: 0.64, b: 0.36 } },
@@ -273,6 +279,12 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
       assert.equal(parsed.answers.level.expectedLevel, 0.7);
       assert.equal(api.analyze({ a: 1 }).is(api.dominant()), true);
       assert.equal(api.massSet({ a: 0.9, b: 0.1 }, 0.8).count, 1);
+      assert.equal(api.inspectAnswer({ ...parsed.answers.route.raw, confidence: null }).answer.shape, 'paired');
+      assert.equal(api.inspectAnswer({ type: 'noul', noul: 0.2 }).answer.no, 0.8);
+      assert.equal(api.inspectAnswer({ ...parsed.answers.level.raw, confidence: null }).answer.expectedLevel, 0.7);
+      assert.equal(api.inspectAnswer(undefined).kind, 'missing');
+      assert.equal(api.inspectAnswer({ type: 'choice', choice: 'a', probabilities: null }).kind, 'unavailable');
+      assert.equal(api.inspectAnswer(null).issues[0].code, 'invalid-type');
     `,
       ],
       consumer,

@@ -11,7 +11,7 @@
 
 Turn Jev responses into recognizable shapes, typed observations, and application code you can read. Describe concentration, preserve alternatives, and decide what to do in your own code.
 
-Independent TypeScript library. ESM. No runtime dependencies or network calls. This is **v0.1.0, an experimental GitHub release**. The API and thresholds remain provisional. The package is not published to npm; use the release tarball below.
+Independent TypeScript library. ESM. No runtime dependencies or network calls. The latest release is **v0.1.0, an experimental GitHub release**. The API and thresholds remain provisional. The package is not published to npm; use the release tarball below. This source branch also includes the unreleased `inspectAnswer()` API described below.
 
 ## Start with the whole distribution
 
@@ -36,6 +36,40 @@ distribution.prominent.count;             // 2 prominent alternatives
 ```
 
 The first option is available, but so is the fact that almost as much probability sits on the second. Option names remain a TypeScript literal union throughout the result.
+
+## Start with one answer
+
+**Unreleased; build from source to use this API.** An SDK, adapter, batch, or saved record may give you an individual answer. `inspectAnswer()` describes it without requiring a model name, usage counts, or a response envelope.
+
+<!-- example:inspection -->
+```ts
+import { inspectAnswer } from 'jev-patterns';
+
+const inspected = inspectAnswer({
+  type: 'choice',
+  choice: 'S1',
+  confidence: null,
+  probabilities: { S1: 0.51, S2: 0.45, none: 0.04 },
+});
+
+if (inspected.kind === 'available') {
+  inspected.answer.shape;       // 'split'
+  inspected.answer.prominent;   // S1 and S2, with their probabilities
+  inspected.answer.confidence;  // null: provider confidence was unavailable
+  inspected.answer.first.option; // typed as 'S1' | 'S2' | 'none'
+}
+```
+
+| Result kind | Meaning |
+| --- | --- |
+| `available` | `.answer` contains the typed observations and a `.raw` snapshot. |
+| `missing` | The supplied answer was `undefined`. |
+| `unavailable` | A Choice or Score omitted its distribution or supplied `null`; `.raw` preserves the supplied answer. |
+| `invalid` | The supplied data cannot be interpreted; `.issues` provides structured paths, codes, and messages. |
+
+Missing confidence becomes `null` in the inspected view. It never borrows a number from the distribution. Noul keeps `.yes`, `.no`, and `.distribution`; Score keeps `.score`, `.confidence`, `.legend`, and `.distribution`. Choice exposes the distribution directly, including `.is()` and `.match()`.
+
+`parse(response)` remains strict about Jev's full wire response. `analyze(probabilities)` remains the direct probability-map API. All three share the same descriptive rules. Expected input problems become inspection outcomes; invalid options and exceptions from executable inputs such as throwing getters still throw. See the [individual-answer contract](docs/answer-inspection.md) and [batch example](examples/answer-batch.ts).
 
 ## Six ways probability can be distributed
 
@@ -245,7 +279,7 @@ npm run test:watch                # affected tests while editing
 npm run check:full                # complete coverage and installed-package checks
 ```
 
-Tests fabricate Jev responses and exercise mathematical invariants, numeric boundaries, malformed inputs, typed consumers, and package contracts. The five TypeScript examples in this README execute and typecheck against the installed tarball.
+Tests fabricate Jev responses and exercise mathematical invariants, numeric boundaries, malformed inputs, typed consumers, and package contracts. All TypeScript examples in this README execute and typecheck against the installed tarball.
 
 Ordinary PRs select affected checks. Broad changes, `main` pushes, release tags, and manual runs select the full Node/platform matrix. See the [live CI runs](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml). See [testing](docs/testing.md), [contributing](CONTRIBUTING.md), [changes](CHANGELOG.md), and the [release policy](docs/release-policy.md).
 
