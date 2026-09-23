@@ -6,12 +6,23 @@
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=24.14" },
-  "exports": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
   "scripts": {
     "test": "node --test test/*.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage \"--test-coverage-include=src/**\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=99 test/*.test.mjs",
+    "test:package": "npm run build && node --test test/package/consumer.mjs",
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "check": "npm run typecheck && npm run test:coverage && npm run test:package",
     "demo": "node examples/shapes.ts",
     "demo:distributions": "node examples/distributions.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json"
   },
-  "devDependencies": { "typescript": "^5.9.3" }
+  "devDependencies": { "typescript": "5.9.3" }
 }

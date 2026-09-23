@@ -11,8 +11,9 @@ export const defaultThresholds: ShapeThresholds = Object.freeze({
 });
 
 export function dominant(options: { readonly floor?: number; readonly gap?: number } = {}): Predicate {
-  const floor = requireProbability(options.floor ?? defaultThresholds.dominant.floor, 'floor');
-  const gap = requireProbability(options.gap ?? defaultThresholds.dominant.gap, 'gap');
+  const { floor = defaultThresholds.dominant.floor, gap = defaultThresholds.dominant.gap } = options;
+  requireProbability(floor, 'floor');
+  requireProbability(gap, 'gap');
   return data => data.uniqueMaximum !== null && atLeast(data.maximumProbability, floor) && atLeast(data.gap, gap);
 }
 
@@ -20,44 +21,50 @@ export function dominant(options: { readonly floor?: number; readonly gap?: numb
 export function paired(options: {
   readonly floor?: number; readonly secondFloor?: number; readonly gap?: number;
 } = {}): Predicate {
-  const floor = requireProbability(options.floor ?? defaultThresholds.paired.floor, 'floor');
-  const alternative = requireProbability(options.secondFloor ?? defaultThresholds.paired.secondFloor, 'secondFloor');
-  const gap = requireProbability(options.gap ?? defaultThresholds.paired.gap, 'gap');
+  const { floor = defaultThresholds.paired.floor, secondFloor = defaultThresholds.paired.secondFloor,
+    gap = defaultThresholds.paired.gap } = options;
+  requireProbability(floor, 'floor');
+  requireProbability(secondFloor, 'secondFloor');
+  requireProbability(gap, 'gap');
   return data => data.uniqueMaximum !== null && data.second !== null
-    && atLeast(data.maximumProbability, floor) && atLeast(data.secondProbability, alternative)
+    && atLeast(data.maximumProbability, floor) && atLeast(data.secondProbability, secondFloor)
     && atLeast(data.gap, gap);
 }
 
 /** gap bounds the first-to-second difference; combinedFloor bounds their combined probability. */
 export function split(options: { readonly gap?: number; readonly combinedFloor?: number } = {}): Predicate {
-  const gap = requireProbability(options.gap ?? defaultThresholds.split.gap, 'gap');
-  const combined = requireProbability(options.combinedFloor ?? defaultThresholds.split.combinedFloor, 'combinedFloor');
+  const { gap = defaultThresholds.split.gap, combinedFloor = defaultThresholds.split.combinedFloor } = options;
+  requireProbability(gap, 'gap');
+  requireProbability(combinedFloor, 'combinedFloor');
   return data => data.second !== null && atLeast(gap, data.gap)
-    && atLeast(data.metrics.firstTwoProbability, combined);
+    && atLeast(data.metrics.firstTwoProbability, combinedFloor);
 }
 
 export function clustered(options: {
   readonly minimumCount?: number; readonly combinedFloor?: number; readonly ratio?: number;
 } = {}): Predicate {
-  const count = requireCount(options.minimumCount ?? defaultThresholds.clustered.minimumCount);
-  const combined = requireProbability(options.combinedFloor ?? defaultThresholds.clustered.combinedFloor, 'combinedFloor');
-  const ratio = requireProbability(options.ratio ?? defaultThresholds.clustered.ratio, 'ratio');
+  const { minimumCount = defaultThresholds.clustered.minimumCount,
+    combinedFloor = defaultThresholds.clustered.combinedFloor, ratio = defaultThresholds.clustered.ratio } = options;
+  requireCount(minimumCount);
+  requireProbability(combinedFloor, 'combinedFloor');
+  requireProbability(ratio, 'ratio');
   if (ratio === 0) throw new TypeError('ratio must be greater than 0');
   return data => {
     const items = data.sorted.filter(item => item.probability > 0
       && atLeast(item.probability / data.maximumProbability, ratio));
-    return items.length >= count && atLeast(items.reduce((total, item) => total + item.probability, 0), combined);
+    return items.length >= minimumCount && atLeast(items.reduce((total, item) => total + item.probability, 0), combinedFloor);
   };
 }
 
 export function flat(options: { readonly minimumRatio?: number; readonly minimumCount?: number } = {}): Predicate {
-  const ratio = requireProbability(options.minimumRatio ?? defaultThresholds.flat.minimumRatio, 'minimumRatio');
-  const count = requireCount(options.minimumCount ?? defaultThresholds.flat.minimumCount);
+  const { minimumRatio = defaultThresholds.flat.minimumRatio, minimumCount = defaultThresholds.flat.minimumCount } = options;
+  requireProbability(minimumRatio, 'minimumRatio');
+  requireCount(minimumCount);
   return data => {
     const positive = data.sorted.filter(item => item.probability > 0);
     const smallest = positive[positive.length - 1];
-    return positive.length >= count && smallest !== undefined
-      && atLeast(smallest.probability / data.maximumProbability, ratio);
+    return positive.length >= minimumCount && smallest !== undefined
+      && atLeast(smallest.probability / data.maximumProbability, minimumRatio);
   };
 }
 

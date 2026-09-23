@@ -7,7 +7,7 @@ An independent, experimental TypeScript library with no runtime dependencies or 
 ## Describe the distribution
 
 ```ts
-import { analyze } from './src/index.ts';
+import { analyze } from 'jev-lens';
 
 const distribution = analyze({ a: 0.64, b: 0.25, c: 0.07, d: 0.04 });
 
@@ -52,7 +52,7 @@ Option names remain `"a" | "b" | "c" | "d"` throughout. Both paired and split ca
 ## Predicates describe structure
 
 ```ts
-import { allOf, dominant, gapAtLeast, split } from './src/index.ts';
+import { allOf, dominant, gapAtLeast, split } from 'jev-lens';
 
 const concentrated = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
 distribution.is(concentrated);
@@ -64,7 +64,7 @@ Predicates are ordinary functions. Compose them with `allOf`, `anyOf` and `not`,
 ## Jev integration
 
 ```ts
-import { parse } from './src/index.ts';
+import { parse } from 'jev-lens';
 
 const response = parse(await jevJudge(callContext));
 const distribution = response.answers.ownership;
@@ -82,18 +82,21 @@ Noul retains yes and no; Score retains ordered-level data. Their categorical vie
 
 Thresholds are provisional and isolated in `src/predicates.ts`. This revision changes the vocabulary without retuning classification. The next iteration can improve the names and their distinctions while keeping the data/predicate/match contract intact.
 
-See [the design](docs/proposal.md), [public types](src/model.ts), [runnable example](examples/shapes.ts), [domain example](examples/ownership.ts) and [compile-time contracts](test/types.test.ts).
+In the repository checkout, see [the design](docs/proposal.md), [public types](src/model.ts), [runnable example](examples/shapes.ts), [domain example](examples/ownership.ts) and [compile-time contracts](test/types.test.ts). These development references are excluded from the package archive.
 
 ## Development
 
-Node 24.14 or newer is required for this source-only prototype.
+Node 24.14 or newer is required. The package builds ESM JavaScript and TypeScript declarations; the API remains experimental.
 
 ```sh
-npm ci
-npm test
-npm run typecheck
+npm ci --ignore-scripts
+npm run check
 npm run demo
 npm run demo:distributions
 ```
 
-The package remains private until compiled JavaScript/declarations, package-consumer checks, CI and release preparation are complete. See [contributing](CONTRIBUTING.md). This project is not affiliated with TypeSafe AI.
+The package is not on npm yet. To try the consumer examples above, run `npm pack` in this checkout, then install the resulting `jev-lens-0.0.0.tgz` by its path in another project. Its public import is `jev-lens`; checkout examples under `examples/` run directly from source.
+
+`npm run check` enforces source type checks and coverage floors, then builds and installs the actual tarball into an isolated consumer. The public runtime suite runs again against compiled JavaScript, and declaration contracts run in four TypeScript consumer configurations. Tests use synthetic responses and seeded distributions; no Jev account or network calls are needed after development dependencies are installed.
+
+The repository includes CI for Node 24.14/24/26 and Linux/macOS/Windows. Remote CI results will be available after publication to GitHub. See [test contracts](docs/testing.md), [contributing](CONTRIBUTING.md) and the [release policy](docs/release-policy.md). The package remains private while names and the first public release are reviewed. This project is not affiliated with TypeSafe AI.

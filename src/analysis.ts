@@ -57,7 +57,7 @@ function dispatch<Option extends string>(
   distribution: Distribution<Option>, handlers: MatchHandlers<Option>,
 ): unknown {
   for (const shape of shapes) {
-    if (handlers === null || typeof handlers !== 'object'
+    if (handlers === null || (typeof handlers !== 'object' && typeof handlers !== 'function')
       || !Object.hasOwn(handlers, shape) || typeof handlers[shape] !== 'function') {
       throw new TypeError(`match() requires a handler for ${JSON.stringify(shape)}`);
     }

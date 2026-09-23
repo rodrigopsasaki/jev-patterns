@@ -4,6 +4,8 @@ The approved `initial-review` Interlock graph contains two independent report-on
 
 The initial launch could not reach an agent. Its brief commit hit a sandbox restriction on Git signing. The current desktop task also runs outside a Herdr-managed pane and has no active Herdr server. The two reviews therefore used native Codex subagents as an explicit fallback. Their reports are not Interlock-cleared outcomes. The approval and failed attempt remain in the local ledger, excluded from the public repo.
 
+The 2026-09-23 test-hardening pass also used native sessions: separate Jev wire-contract, numerical-property/boundary, and TypeScript/matching tasks. The parent integrated two validation/dispatch fixes, added packaging and CI checks, and ran the complete gate on Node 24.14.0 and 26.9.0. A further independent package review caught source-only imports in the shipped README; installed-example tests now cover that regression. These are locally verified test results, not new Interlock receipts or remote CI results. The original approved graph was not changed or reused as approval for the later work.
+
 ## Normal Interlock setup
 
 Use the installed Interlock CLI from a properly configured Herdr session. Copy `.interlock/local.example.yaml` to `.interlock/local.yaml`, choose an authenticated runtime, and use the graph approval and run commands. Local runtime configuration stays outside Git.

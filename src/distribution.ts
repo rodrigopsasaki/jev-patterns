@@ -3,8 +3,7 @@ import { atLeast, numericTolerances } from './numeric.ts';
 
 /** Describe a normalized probability map with transparent, versioned heuristics. */
 export function measure(input: unknown, options: Options = {}): DistributionData {
-  const prominenceRatio = options.prominenceRatio ?? 0.5;
-  const targetMass = options.targetMass ?? 0.8;
+  const { prominenceRatio = 0.5, targetMass = 0.8 } = options;
   requireFraction(prominenceRatio, 'prominenceRatio');
   requireFraction(targetMass, 'targetMass');
   const { sorted, total } = readProbabilities(input);
