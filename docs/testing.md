@@ -60,7 +60,7 @@ Unit suites import implementation modules so a parser edit does not mark every m
 
 PRs use the event's immutable base SHA with full Git history. A small planning job needs no package installation. Ordinary changes run one Linux/Node 24 affected job; documentation-only changes need no test runner. Broad changes select the complete five-job Node/platform matrix. `main` pushes, release tags and manual runs always select full verification. Branch pushes do not duplicate PR checks. Superseded runs are cancelled.
 
-The final always-run `CI` status verifies that the selected jobs succeeded, including the expected skipped jobs; require that status in branch protection after publication. Action commits and development dependencies are pinned. Hosted CI execution remains unverified until the repository is published.
+The final always-run `CI` status verifies that the selected jobs succeeded, including the expected skipped jobs; require that status in branch protection. Action commits and development dependencies are pinned. Hosted results are visible in the [CI runs](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml); a local pass alone does not establish a remote pass.
 
 ## Limits
 

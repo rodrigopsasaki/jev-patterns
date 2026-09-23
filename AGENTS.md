@@ -1,4 +1,4 @@
-# Working on jev-lens
+# Working on jev-patterns
 
 This library describes probability distributions. Keep the distinction between an observation, a descriptive heuristic and an application action visible in the API.
 

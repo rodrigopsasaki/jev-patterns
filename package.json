@@ -1,6 +1,6 @@
 {
-  "name": "jev-lens",
-  "version": "0.0.0",
+  "name": "jev-patterns",
+  "version": "0.1.0",
   "private": true,
   "description": "Human-readable interpretations of Jev probability distributions",
   "type": "module",
@@ -47,5 +47,19 @@
     "@vitest/coverage-v8": "5.0.1",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rodrigopsasaki/jev-patterns.git"
+  },
+  "homepage": "https://github.com/rodrigopsasaki/jev-patterns#readme",
+  "bugs": {
+    "url": "https://github.com/rodrigopsasaki/jev-patterns/issues"
+  },
+  "keywords": [
+    "jev",
+    "typesafe",
+    "probability",
+    "typescript"
+  ]
 }

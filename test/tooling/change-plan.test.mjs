@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 function repository(files = {}) {
-  const cwd = mkdtempSync(join(tmpdir(), 'jev-lens-changes-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'jev-patterns-changes-'));
   scratch.add(cwd);
   const git = (...args) =>
     execFileSync('git', args, {

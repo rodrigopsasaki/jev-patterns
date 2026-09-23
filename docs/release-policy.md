@@ -1,6 +1,6 @@
 # Release policy
 
-The package is experimental and private. The local repository can build and test a distribution; no GitHub repository or npm package has been published from this task.
+`jev-patterns` is an experimental open-source project. The v0.1.0 GitHub prerelease distributes a compiled package tarball. It is not published to npm; `private: true` prevents accidental registry publication. The npm name was unregistered when checked on 2026-09-23, which does not reserve it.
 
 ## Compatibility contract
 
@@ -10,12 +10,16 @@ Before 1.0, breaking API changes require a minor-version increment; compatible f
 
 The package ships ESM JavaScript and TypeScript declarations. The current support floor is Node 24.14 and TypeScript 5.9.3. CommonJS-specific builds, older engines and browser bundlers are not claimed as supported without dedicated runtime checks. Bundler-mode type resolution is tested separately.
 
-## First public release
+## GitHub releases
 
-1. Settle the package name and repository owner, verify availability and add the actual repository metadata and reporting links.
-2. Review the vocabulary and semantics against representative synthetic distributions, documenting surprising boundaries and remaining ambiguities. Keep cutoffs explicitly provisional; an experimental release does not require pretending they are calibrated.
-3. Run `npm run check:full` from a clean checkout and obtain passing results from the configured remote CI matrix. Require the final `CI` status and review before merging after the remote repository exists. A clean `npm run check` intentionally has no affected work and is not release evidence.
-4. Review the exact tarball contents and declarations. Confirm license, package metadata, README installation examples, changelog and support policy.
-5. Remove `private: true` only in the release change, choose a version, tag the reviewed commit and publish the verified artifact. Use an explicit maintainer release; the CI workflow does not publish packages.
+1. Update version, lockfile, changelog and package documentation. Review statistical/API changes against representative fixtures, keeping provisional cutoffs explicit.
+2. Run `npm run check:full` from the reviewed checkout. Obtain passing results from the hosted Node/platform matrix for the exact release commit. A clean `npm run check` intentionally has no affected work and is not release evidence.
+3. Review the tarball contents and declarations. The package must include its README assets and work without repository source. Build the release artifact from the tested commit; include a SHA-256 checksum with the download.
+4. Create an annotated version tag and publish the artifact as a GitHub prerelease while the API remains experimental. Include the commit, validation and scope in the release notes.
+5. Require the final `CI` status for changes to `main`, and use pull requests after the initial repository bootstrap. Review changes before merging. The workflow does not publish packages automatically.
 
-Later releases repeat the verification and artifact review. A regression requires a reproducer and a documented fix. Never overwrite an existing release or claim verification that has only been configured, rather than run.
+Never replace an existing release artifact or tag to conceal a defect. Fix regressions in a new version with a reproducer and a documented correction.
+
+## First npm release
+
+Recheck package-name availability and confirm ownership immediately before publication. Confirm the public repository metadata, reporting links, install instructions and exact package contents. Remove `private: true` only in the deliberate npm release change and use an explicitly authorized maintainer publication of the verified artifact. GitHub publication alone neither reserves the npm name nor authorizes an npm publish.

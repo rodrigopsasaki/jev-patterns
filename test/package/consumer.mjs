@@ -158,7 +158,7 @@ function run(command, args, cwd) {
 
 test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`, async (t) => {
   assert.ok(npmCli, 'Run this check with npm run test:package');
-  const scratch = await mkdtemp(join(tmpdir(), 'jev-lens-consumer-'));
+  const scratch = await mkdtemp(join(tmpdir(), 'jev-patterns-consumer-'));
   t.after(() => rm(scratch, { recursive: true, force: true }));
   const cache = join(scratch, 'cache');
   const npm = (args, cwd) => run(process.execPath, [npmCli, ...args, '--cache', cache], cwd);
@@ -200,7 +200,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
     consumer,
   );
   const installed = JSON.parse(
-    await readFile(join(consumer, 'node_modules/jev-lens/package.json'), 'utf8'),
+    await readFile(join(consumer, 'node_modules/jev-patterns/package.json'), 'utf8'),
   );
   assert.deepEqual(installed.dependencies ?? {}, {});
   assert.deepEqual(Object.keys(installed.exports), ['.']);
@@ -224,7 +224,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
         `${file}: shared artifact contracts only support Vitest's test function`,
       );
     const rewritten = source
-      .replace(/\.\.\/src\/[^'"\s]+\.ts/g, 'jev-lens')
+      .replace(/\.\.\/src\/[^'"\s]+\.ts/g, 'jev-patterns')
       .replace(/from\s+(['"])vitest\1/g, "from 'node:test'");
     assert.ok(
       !rewritten.includes('../src/'),
@@ -258,7 +258,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
         '--eval',
         `
       import assert from 'node:assert/strict';
-      import * as api from 'jev-lens';
+      import * as api from 'jev-patterns';
       assert.deepEqual(Object.keys(api).sort(), [
         'allOf', 'analyze', 'anyOf', 'clustered', 'dominant', 'flat', 'gapAtLeast',
         'massSet', 'maximumProbabilityAtLeast', 'not', 'paired', 'parse', 'split',
@@ -287,7 +287,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
         '--eval',
         `
       import assert from 'node:assert/strict';
-      await assert.rejects(import('jev-lens/dist/analysis.js'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
+      await assert.rejects(import('jev-patterns/dist/analysis.js'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });
     `,
       ],
       consumer,
@@ -295,7 +295,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
   });
 
   const readme = (
-    await readFile(join(consumer, 'node_modules/jev-lens/README.md'), 'utf8')
+    await readFile(join(consumer, 'node_modules/jev-patterns/README.md'), 'utf8')
   ).replaceAll('\r\n', '\n');
   await t.test('relative README images are present in the installed archive', () => {
     assertReadmeImages(readme, paths);

@@ -1,6 +1,7 @@
-# jev-lens
+# jev-patterns
 
-![Status: v0 prototype](assets/badges/status.svg)
+[![Status: v0.1.0 experimental](assets/badges/status.svg)](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.1.0)
+[![CI](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml)
 [![License: MIT](assets/badges/license.svg)](LICENSE)
 ![Node: 24.14 or newer](assets/badges/node.svg)
 ![TypeScript: typed API](assets/badges/typescript.svg)
@@ -10,7 +11,7 @@
 
 Turn Jev responses into recognizable shapes, typed observations, and application code you can read. Describe concentration, preserve alternatives, and decide what to do in your own code.
 
-Independent TypeScript library. ESM. No runtime dependencies or network calls. This is a working **v0 prototype**, currently private at `0.0.0`; it has not been published to npm or GitHub. Names and thresholds remain provisional.
+Independent TypeScript library. ESM. No runtime dependencies or network calls. This is **v0.1.0, an experimental GitHub release**. The API and thresholds remain provisional. The package is not published to npm; use the release tarball below.
 
 ## Start with the whole distribution
 
@@ -18,7 +19,7 @@ A customer cannot sign in. Your model was asked which **one** explanation best f
 
 <!-- example:quickstart -->
 ```ts
-import { analyze } from 'jev-lens';
+import { analyze } from 'jev-patterns';
 
 const distribution = analyze({
   password_reset: 0.51,
@@ -75,7 +76,7 @@ In a support UI, map the shape to a view. For a split result, offer the two main
 
 <!-- example:support -->
 ```ts
-import { analyze } from 'jev-lens';
+import { analyze } from 'jev-patterns';
 
 const issue = analyze({
   password_reset: 0.51,
@@ -105,7 +106,7 @@ Ask which **one** help article is the best starting point. If probability is spr
 
 <!-- example:retrieval -->
 ```ts
-import { massSet } from 'jev-lens';
+import { massSet } from 'jev-patterns';
 
 const shortlist = massSet({
   reset_2fa: 0.41,
@@ -129,7 +130,7 @@ Ask “Does this ticket mention billing?”, “Does it request a refund?”, an
 
 <!-- example:labels -->
 ```ts
-import { parse } from 'jev-lens';
+import { parse } from 'jev-patterns';
 
 const response = parse({
   model: 'synthetic',
@@ -160,7 +161,7 @@ Shapes are useful shorthand. Predicates let you state your application's require
 
 <!-- example:predicates -->
 ```ts
-import { allOf, analyze, dominant, gapAtLeast } from 'jev-lens';
+import { allOf, analyze, dominant, gapAtLeast } from 'jev-patterns';
 
 const route = analyze({ billing: 0.91, refunds: 0.05, login: 0.03, other: 0.01 });
 const routingPolicy = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
@@ -207,11 +208,24 @@ The next layer could expose verbs such as `classify`, `detect`, `label`, `rank`,
 
 This is a V2 design direction, not an available v0 API. The key boundary is a pure interpreter shared by wrapped calls and saved responses; distribution shapes remain observations underneath the task policy. See the [task recipe proposal](docs/task-recipes.md) in the repository for example signatures, receipt semantics and the seams v0 keeps open.
 
-## Try the prototype locally
+## Install the experimental release
 
-Node 24.14+ and TypeScript 5.9.3+ are the current support floor. No npm install command for a published package exists yet.
+Node 24.14+ and TypeScript 5.9.3+ are the current support floor. Install the compiled package from the [GitHub release](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.1.0):
 
-From this checkout:
+```sh
+npm install https://github.com/rodrigopsasaki/jev-patterns/releases/download/v0.1.0/jev-patterns-0.1.0.tgz
+```
+
+The npm registry name was unregistered when checked on 2026-09-23; it is not reserved by this GitHub release. The package retains `private: true` until an intentional npm release.
+
+To work from source:
+
+```sh
+git clone https://github.com/rodrigopsasaki/jev-patterns.git
+cd jev-patterns
+```
+
+Then:
 
 ```sh
 npm ci --ignore-scripts
@@ -219,7 +233,7 @@ npm run demo
 npm pack
 ```
 
-In a separate project, install the resulting `jev-lens-0.0.0.tgz` by its local path. The public import is `jev-lens`. The tarball includes compiled ESM JavaScript, declarations, this README, and its visual assets.
+In a separate project, install the resulting `jev-patterns-0.1.0.tgz` by its local path. The public import is `jev-patterns`. The tarball includes compiled ESM JavaScript, declarations, this README, and its visual assets.
 
 ## Development and checks
 
@@ -233,6 +247,6 @@ npm run check:full                # complete coverage and installed-package chec
 
 Tests fabricate Jev responses and exercise mathematical invariants, numeric boundaries, malformed inputs, typed consumers, and package contracts. The five TypeScript examples in this README execute and typecheck against the installed tarball.
 
-Ordinary PRs select affected checks. Broad changes, `main` pushes, release tags, and manual runs select the full Node/platform matrix. Hosted CI results will be available after GitHub publication. See [testing](docs/testing.md), [contributing](CONTRIBUTING.md), [changes](CHANGELOG.md), and the [release policy](docs/release-policy.md).
+Ordinary PRs select affected checks. Broad changes, `main` pushes, release tags, and manual runs select the full Node/platform matrix. See the [live CI runs](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml). See [testing](docs/testing.md), [contributing](CONTRIBUTING.md), [changes](CHANGELOG.md), and the [release policy](docs/release-policy.md).
 
 MIT licensed. Independent project, not affiliated with TypeSafe AI.

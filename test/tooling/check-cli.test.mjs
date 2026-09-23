@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 function repository(files = {}) {
-  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'jev-lens-check-cli-')));
+  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'jev-patterns-check-cli-')));
   scratch.add(cwd);
   const env = {
     ...process.env,

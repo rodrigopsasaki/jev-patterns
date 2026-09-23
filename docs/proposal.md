@@ -87,7 +87,7 @@ Advanced effective counts remain available without becoming the primary API. Exp
 
 Tests cover the prior numerical regressions plus exhaustive dispatch, callback narrowing, mixed return-type inference, promise identity, exception propagation, overlapping predicates, short-circuit composition, literal-key preservation and cautious unknown/indexed-input typing. Synthetic examples check the common shapes. They do not establish calibration or universal defaults.
 
-The package is MIT, independent of the provider's HTTP client, dependency-free at runtime and unpublished. JavaScript/declaration builds, installed-package tests, a CI matrix and a release policy are implemented. Remote CI execution, final naming and publication remain outstanding. See testing.md and release-policy.md for the contribution and release gates. Python and domain evaluation come later. No private Jev inputs are public fixtures.
+The package is MIT, independent of the provider's HTTP client and dependency-free at runtime. The first experimental GitHub release is `jev-patterns` v0.1.0; npm publication remains separate. JavaScript/declaration builds, installed-package tests, a CI matrix and a release policy are implemented. The public name replaces the working name `jev-lens`, which was already registered on npm. See testing.md and release-policy.md for the contribution and release gates. Python and domain evaluation come later. No private Jev inputs are public fixtures.
 
 ## Sources
 
