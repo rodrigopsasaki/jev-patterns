@@ -3,6 +3,7 @@
 ## 0.1.0 — 2026-09-23
 
 - Prepare the first experimental GitHub release as `jev-patterns`. The working name `jev-lens` was already registered on npm. Add public repository metadata, CI links and a compiled release tarball; npm publication remains separate.
+- Isolate Git fixtures with an actual empty global config file; Git for Windows rejects Node's null-device path when used as a config filename.
 
 - Document a future task-recipe layer with ergonomic verbs, replaceable policies, optional receipts and a shared live/offline interpreter. Keep the v0 runtime API and descriptive profile unchanged.
 - Add a visual v0 README with local badges, six distribution diagrams and executable application examples. Clarify categorical selection versus separate per-label Noul probabilities; no statistical rules or public APIs change.
