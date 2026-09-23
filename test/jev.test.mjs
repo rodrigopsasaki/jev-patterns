@@ -41,7 +41,15 @@ test('arbitrary option and question keys cannot modify prototypes', () => {
   const result = parse(input);
   assert.equal(Object.hasOwn(result.answers, '__proto__'), true);
   assert.equal(result.answers.__proto__.distribution.winner.option, '__proto__');
-  assert.equal(Object.getPrototypeOf(result.answers), Object.prototype);
+  assert.equal(Object.getPrototypeOf(result.answers), null);
+});
+
+test('missing question ids never resolve inherited prototype members', () => {
+  const result = parse(response({ route: choice() }));
+  for (const key of ['constructor', 'toString', '__proto__', 'missing']) {
+    assert.equal(result.answers[key], undefined);
+    assert.equal(result.answers[key]?.distribution.shape, undefined);
+  }
 });
 
 test('bad responses are rejected with the question id in the error', () => {

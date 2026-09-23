@@ -1,5 +1,7 @@
 const SUM_TOLERANCE = 1e-8;
 const TIE_TOLERANCE = 1e-12;
+const THRESHOLD_RELATIVE_TOLERANCE = 1e-12;
+const MASS_TOLERANCE = 1e-12;
 
 export type Shape = 'clear-winner' | 'leader-with-runner-up' | 'close-race'
   | 'several-contenders' | 'flat' | 'mixed';
@@ -16,12 +18,26 @@ export interface Options {
   readonly targetMass?: number;
 }
 
+export interface MassSet {
+  readonly options: readonly Candidate[];
+  readonly count: number;
+  readonly mass: number;
+  readonly targetMass: number;
+  readonly excludedMass: number;
+}
+
 export interface Analysis {
   readonly profile: {
     readonly id: 'descriptive-v0';
     readonly contenderRatio: number;
     readonly targetMass: number;
     readonly shapeThresholds: typeof SHAPE_THRESHOLDS;
+    readonly numericTolerances: {
+      readonly inputSumAbsolute: number;
+      readonly tieAbsolute: number;
+      readonly thresholdRelative: number;
+      readonly massBoundaryAbsolute: number;
+    };
   };
   readonly shape: Shape;
   readonly summary: string;
@@ -34,7 +50,7 @@ export interface Analysis {
   readonly contenderCount: number;
   readonly contenderMass: number;
   readonly excludedMass: number;
-  readonly massSet: ReturnType<typeof massSet>;
+  readonly massSet: MassSet;
   readonly metrics: {
     readonly topProbability: number;
     readonly margin: number;
@@ -63,8 +79,7 @@ export function analyze(input: unknown, options: Options = {}): Analysis {
   if (!first) throw new TypeError('At least one option is required');
   const second = ranked[1];
   const leaders = ranked.filter(item => tied(item.probability, first.probability));
-  const contenders = ranked.filter(item => item.probability > 0
-    && item.probability + TIE_TOLERANCE >= contenderRatio * first.probability);
+  const contenders = selectContenders(ranked, first.probability, contenderRatio);
   const contenderMass = bounded(sum(contenders.map(item => item.probability)));
   const entropyNats = sum(ranked.map(item => item.probability === 0
     ? 0 : -item.probability * Math.log(item.probability)));
@@ -72,7 +87,9 @@ export function analyze(input: unknown, options: Options = {}): Analysis {
   const margin = first.probability - (second?.probability ?? 0);
   const shape = classify(ranked);
   return {
-    profile: { id: 'descriptive-v0', contenderRatio, targetMass, shapeThresholds: SHAPE_THRESHOLDS },
+    profile: { id: 'descriptive-v0', contenderRatio, targetMass, shapeThresholds: SHAPE_THRESHOLDS,
+      numericTolerances: { inputSumAbsolute: SUM_TOLERANCE, tieAbsolute: TIE_TOLERANCE,
+        thresholdRelative: THRESHOLD_RELATIVE_TOLERANCE, massBoundaryAbsolute: MASS_TOLERANCE } },
     shape,
     summary: `${humanShape(shape)}. ${contenders.length} contender${contenders.length === 1 ? '' : 's'} under the ${contenderRatio} relative rule, carrying ${(100 * contenderMass).toFixed(1)}% of model probability; ${(100 * (1 - contenderMass)).toFixed(1)}% elsewhere.`,
     ranked, winner: leaders.length === 1 ? first : null, leaders,
@@ -90,12 +107,12 @@ export function analyze(input: unknown, options: Options = {}): Analysis {
 }
 
 /** Ranked prefix reaching targetMass, expanded to retain ties at the boundary. */
-export function massSet(input: unknown, targetMass: number) {
+export function massSet(input: unknown, targetMass: number): MassSet {
   requireFraction(targetMass, 'targetMass');
   return selectMassSet(readProbabilities(input).ranked, targetMass);
 }
 
-function selectMassSet(ranked: readonly Candidate[], targetMass: number) {
+function selectMassSet(ranked: readonly Candidate[], targetMass: number): MassSet {
   const options: Candidate[] = [];
   let boundary: number | undefined;
   let total = 0;
@@ -104,7 +121,8 @@ function selectMassSet(ranked: readonly Candidate[], targetMass: number) {
     if (boundary !== undefined && !tied(item.probability, boundary)) break;
     options.push(item);
     total += item.probability;
-    if (boundary === undefined && (total >= targetMass || 1 - total <= Number.EPSILON)) {
+    // A full-mass request always retains every positive entry, even sub-ULP tails.
+    if (targetMass < 1 && boundary === undefined && total + MASS_TOLERANCE >= targetMass) {
       boundary = item.probability;
     }
   }
@@ -123,11 +141,15 @@ function classify(ranked: readonly Candidate[]): Shape {
   if (atLeast(top + second, t.closeTopTwoMass) && atLeast(second / top, t.closeRatio)) return 'close-race';
   if (atLeast(top, t.leaderTop) && atLeast(second, t.runnerUp)
     && atLeast(top - second, t.leaderMargin)) return 'leader-with-runner-up';
-  const several = positive.filter(item => atLeast(item.probability / top, t.severalRatio));
+  const several = selectContenders(positive, top, t.severalRatio);
   if (several.length >= 3 && atLeast(sum(several.map(item => item.probability)), t.severalMass)) {
     return 'several-contenders';
   }
   return 'mixed';
+}
+
+function selectContenders(ranked: readonly Candidate[], top: number, ratio: number): Candidate[] {
+  return ranked.filter(item => item.probability > 0 && atLeast(item.probability / top, ratio));
 }
 
 function humanShape(shape: Shape): string {
@@ -174,5 +196,7 @@ function sum(values: readonly number[]): number {
 }
 function bounded(value: number): number { return Math.min(1, Math.max(0, value)); }
 function tied(a: number, b: number): boolean { return Math.abs(a - b) <= TIE_TOLERANCE; }
-function atLeast(a: number, b: number): boolean { return a + TIE_TOLERANCE >= b; }
+function atLeast(a: number, b: number): boolean {
+  return a >= b || b - a <= THRESHOLD_RELATIVE_TOLERANCE * Math.max(Math.abs(a), Math.abs(b));
+}
 function compareKeys(a: string, b: string): number { return a < b ? -1 : a > b ? 1 : 0; }

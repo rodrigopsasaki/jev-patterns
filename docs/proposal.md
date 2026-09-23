@@ -34,11 +34,13 @@ Initial shape rules, in order: clear winner (top >= .8 and gap >= .2); flat (at 
 
 **Contender count** is the number with p >= r times the leader, excluding zero probability. Default r = .5 is a visible heuristic. It gives one for 97/1/1/1 and two for 42/41/10/7. It does not promise coverage; report retained and excluded mass beside it.
 
-**Mass set** is the smallest ranked prefix reaching a requested model mass, expanded to include all options tied at the boundary. At 80%, 42/41/10/7 needs two options; at 90%, it needs three. This is model probability mass, not a confidence interval or a guaranteed prediction set. It can include more than the mathematically smallest set because arbitrary tie-breaking is undesirable.
+**Mass set** is the smallest ranked prefix reaching a requested model mass, expanded to include all options tied at the boundary. At 80%, 42/41/10/7 needs two options; at 90%, it needs three. This is model probability mass, not a confidence interval or a guaranteed prediction set. It can include more than the mathematically smallest set because arbitrary tie-breaking is undesirable. A target below 1 uses a 1e-12 mass tolerance to avoid accidental extra options from decimal roundoff; target 1 always keeps every strictly positive entry. The result reports the actual retained mass.
 
 **Effective options** expresses concentration in units of equally weighted alternatives. Exponential Shannon entropy, exp(-sum(p log p)), is sensitive to the tail. Inverse Simpson concentration, 1/sum(p²), emphasizes larger entries. Both equal k for k equally weighted options and 1 for a point mass. Neither is an integer count of valid answers. For 42/41/10/7 these are about 3.15 and 2.78; rounding them to two would erase useful information.
 
 Return both rather than choosing one and pretending it answers every question. Appending zero-probability options should leave these statistics and the contender shortlist unchanged. Splitting or duplicating labels changes the distribution's meaning; the library cannot repair the question taxonomy.
+
+The profile exposes input-sum, tie, threshold and mass-boundary tolerances. Ties use 1e-12 absolute probability tolerance; threshold comparisons use 1e-12 relative tolerance, including for very small custom contender ratios. This is numerical bookkeeping, not statistical indistinguishability. Shape's several-contenders rule uses the profile's fixed .5 ratio; changing the user shortlist ratio does not rename the distribution. `runnerUp` means the second ranked entry, which may have probability zero.
 
 ## API and validation
 
@@ -49,6 +51,8 @@ Return both rather than choosing one and pretending it answers every question. A
 Choice preserves the provider's `choice` and `confidence` and adds a distribution analysis. Verify that the reported choice is among the maxima. Noul exposes P(yes) and P(no) without inventing a provider confidence. Score preserves its ordered levels and reported score; an expectation alone can hide probability split between distant levels. The initial adapter exposes the full distribution, leaving richer ordinal interpretation for a later version.
 
 Do not infer missing probability entries from a confidence score. Retain raw input beside derived fields so interpretations can be reproduced. Keep profile versions and all applied options in the result. Name the output `shape`, not `verdict` or `validity`.
+
+The prototype accepts ordinary decoded JSON objects from the calling JavaScript realm, plus null-prototype maps. Foreign-realm objects (for example from an iframe or Node vm context) must first be decoded in the calling realm. Returned raw values are independent snapshots of input; they are not deeply frozen at runtime. Treat every result as immutable. `scoreDifference` is the provider's reported score minus the expectation recomputed from its probabilities; a discrepancy is exposed, not silently corrected or certified as consistent.
 
 ## Open-source scope
 

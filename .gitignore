@@ -4,5 +4,6 @@ dist/
 .interlock/local.yaml
 .interlock/journal/
 .interlock/receipts/
+.interlock/ledger/
 .worktrees/
 .DS_Store

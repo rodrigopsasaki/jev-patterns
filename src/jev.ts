@@ -2,19 +2,19 @@ import { analyze, type Analysis, type Options } from './distribution.ts';
 
 export type ParsedAnswer =
   | { readonly type: 'choice'; readonly choice: string; readonly confidence: number;
-      readonly distribution: Analysis; readonly raw: Record<string, unknown> }
+      readonly distribution: Analysis; readonly raw: Readonly<Record<string, unknown>> }
   | { readonly type: 'noul'; readonly yes: number; readonly no: number;
-      readonly distribution: Analysis; readonly raw: Record<string, unknown> }
+      readonly distribution: Analysis; readonly raw: Readonly<Record<string, unknown>> }
   | { readonly type: 'score'; readonly score: number; readonly confidence: number;
-      readonly legend: Record<string, string>; readonly expectedLevel: number;
+      readonly legend: Readonly<Record<string, string>>; readonly expectedLevel: number;
       readonly scoreDifference: number; readonly distribution: Analysis;
-      readonly raw: Record<string, unknown> };
+      readonly raw: Readonly<Record<string, unknown>> };
 
 export interface ParsedResponse {
   readonly model: string;
   readonly usage: { readonly input_tokens: number; readonly output_tokens: number };
-  readonly answers: Record<string, ParsedAnswer>;
-  readonly raw: Record<string, unknown>;
+  readonly answers: Readonly<Record<string, ParsedAnswer | undefined>>;
+  readonly raw: Readonly<Record<string, unknown>>;
 }
 
 /** Parse decoded Jev JSON. Await the SDK or HTTP call before calling this function. */
@@ -26,14 +26,16 @@ export function parse(input: unknown, options: Options = {}): ParsedResponse {
   const outputTokens = tokenCount(usage.output_tokens, 'usage.output_tokens');
   const answers = object(response.answers, 'answers');
   if (Object.keys(answers).length === 0) throw new TypeError('answers must be nonempty');
+  const parsedAnswers: Record<string, ParsedAnswer> = Object.fromEntries(Object.entries(answers).map(([id, answer]) => {
+    try { return [id, parseAnswer(answer, options)]; }
+    catch (error) {
+      throw new TypeError(`answers[${JSON.stringify(id)}]: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }));
+  Object.setPrototypeOf(parsedAnswers, null);
   return {
     model, usage: { input_tokens: inputTokens, output_tokens: outputTokens },
-    answers: Object.fromEntries(Object.entries(answers).map(([id, answer]) => {
-      try { return [id, parseAnswer(answer, options)]; }
-      catch (error) {
-        throw new TypeError(`answers[${JSON.stringify(id)}]: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    })),
+    answers: parsedAnswers,
     raw: structuredClone(response),
   };
 }

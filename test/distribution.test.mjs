@@ -52,6 +52,25 @@ test('ties at the mass boundary are all included', () => {
   assert.equal(result.mass, 1);
 });
 
+test('full mass keeps tiny positive tails and ordinary boundaries tolerate roundoff', () => {
+  const full = massSet({ a: 1 - Number.EPSILON, b: Number.EPSILON / 2, c: Number.EPSILON / 2 }, 1);
+  assert.deepEqual(full.options.map(item => item.option), ['a', 'b', 'c']);
+  const boundary = massSet({ a: 0.58, b: 0.22, c: 0.15, d: 0.05 }, 0.8);
+  assert.equal(boundary.count, 2);
+  assert.ok(Math.abs(boundary.mass - 0.8) < 1e-12);
+});
+
+test('shape and default contender count share the same ratio comparison', () => {
+  const result = analyze({ a: 0.4, b: 0.2 - 6e-13, c: 0.2 - 6e-13, d: 0.15, e: 0.05 + 12e-13 });
+  assert.equal(result.contenderCount, 1);
+  assert.equal(result.shape, 'mixed');
+});
+
+test('relative comparison tolerance cannot swallow a tiny custom contender ratio', () => {
+  const result = analyze({ a: 1 - 1e-15, b: 1e-15 }, { contenderRatio: 1e-12 });
+  assert.equal(result.contenderCount, 1);
+});
+
 test('zero padding and insertion order preserve descriptors', () => {
   const a = analyze({ a: 0.42, b: 0.41, c: 0.1, d: 0.07 });
   const b = analyze({ d: 0.07, c: 0.1, b: 0.41, a: 0.42, z: 0 });
