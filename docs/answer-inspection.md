@@ -1,6 +1,6 @@
 # Individual answers
 
-`inspectAnswer(answer, options?)` is an unreleased, synchronous entry point for an individual decoded Choice, Noul, or Score answer. It accepts unknown input and provides a typed overload for known answers, including adapter shapes with nullable fields. It makes no network calls and requires no fabricated response envelope.
+`inspectAnswer(answer, options?)` is a synchronous entry point available since v0.2.0 for an individual decoded Choice, Noul, or Score answer. It accepts unknown input and preserves the types of known answers, including adapter shapes with nullable fields. It makes no network calls and requires no fabricated response envelope.
 
 ## Outcomes
 

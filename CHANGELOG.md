@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-09-23
+
+- Publish the first npm package, including the answer-inspection API, compiled ESM, declarations, and README assets. Install with `npm install jev-patterns`. The earlier v0.1.0 release remains GitHub-only.
 
 - Add `inspectAnswer()` for individual Choice, Noul, and Score answers, including adapters with nullable confidence and distributions. Preserve literal option types, raw snapshots, predicates, and exhaustive shape matching.
 - Distinguish available, missing, unavailable, and invalid answers. Return structured issue paths and codes for expected data failures while allowing invalid options and executable-input errors to throw.

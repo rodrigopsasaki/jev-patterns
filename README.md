@@ -1,6 +1,6 @@
 # jev-patterns
 
-[![Status: v0.1.0 experimental](assets/badges/status.svg)](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.1.0)
+[![Status: v0.2.0 experimental](assets/badges/status.svg)](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.2.0)
 [![CI](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml)
 [![License: MIT](assets/badges/license.svg)](LICENSE)
 ![Node: 24.14 or newer](assets/badges/node.svg)
@@ -11,7 +11,7 @@
 
 Turn Jev responses into recognizable shapes, typed observations, and application code you can read. Describe concentration, preserve alternatives, and decide what to do in your own code.
 
-Independent TypeScript library. ESM. No runtime dependencies or network calls. The latest release is **v0.1.0, an experimental GitHub release**. The API and thresholds remain provisional. The package is not published to npm; use the release tarball below. This source branch also includes the unreleased `inspectAnswer()` API described below.
+Independent TypeScript library. ESM. No runtime dependencies or network calls. **v0.2.0** includes individual-answer inspection and is the first npm release. The API and thresholds remain provisional.
 
 ## Start with the whole distribution
 
@@ -39,7 +39,7 @@ The first option is available, but so is the fact that almost as much probabilit
 
 ## Start with one answer
 
-**Unreleased; build from source to use this API.** An SDK, adapter, batch, or saved record may give you an individual answer. `inspectAnswer()` describes it without requiring a model name, usage counts, or a response envelope.
+An SDK, adapter, batch, or saved record may give you an individual answer. `inspectAnswer()` describes it without requiring a model name, usage counts, or a response envelope.
 
 <!-- example:inspection -->
 ```ts
@@ -242,15 +242,15 @@ The next layer could expose verbs such as `classify`, `detect`, `label`, `rank`,
 
 This is a V2 design direction, not an available v0 API. The key boundary is a pure interpreter shared by wrapped calls and saved responses; distribution shapes remain observations underneath the task policy. See the [task recipe proposal](docs/task-recipes.md) in the repository for example signatures, receipt semantics and the seams v0 keeps open.
 
-## Install the experimental release
+## Install
 
-Node 24.14+ and TypeScript 5.9.3+ are the current support floor. Install the compiled package from the [GitHub release](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.1.0):
+Node 24.14+ and TypeScript 5.9.3+ are the current support floor. Install the compiled package from [npm](https://www.npmjs.com/package/jev-patterns):
 
 ```sh
-npm install https://github.com/rodrigopsasaki/jev-patterns/releases/download/v0.1.0/jev-patterns-0.1.0.tgz
+npm install jev-patterns
 ```
 
-The npm registry name was unregistered when checked on 2026-09-23; it is not reserved by this GitHub release. The package retains `private: true` until an intentional npm release.
+The [GitHub release](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.2.0) also provides a compiled tarball and checksum. The earlier v0.1.0 release was distributed through GitHub only.
 
 To work from source:
 
@@ -267,7 +267,7 @@ npm run demo
 npm pack
 ```
 
-In a separate project, install the resulting `jev-patterns-0.1.0.tgz` by its local path. The public import is `jev-patterns`. The tarball includes compiled ESM JavaScript, declarations, this README, and its visual assets.
+In a separate project, install the resulting `jev-patterns-0.2.0.tgz` by its local path. The public import is `jev-patterns`. The tarball includes compiled ESM JavaScript, declarations, this README, and its visual assets.
 
 ## Development and checks
 
