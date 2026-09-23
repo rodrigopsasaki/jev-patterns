@@ -1,73 +1,80 @@
-# A vocabulary for probability distributions
+# Pattern matching over uncertainty
 
-Status: experimental proposal, 2026-09-23.
+Status: experimental descriptive-v1 contract, 2026-09-23. This supersedes the first prototype vocabulary. Historical review reports retain their original source snapshots.
 
-## What the library promises
+## Authority boundary
 
-Jev already returns probability distributions for Choice and Score. Its confidence is a compression of that distribution. A second opaque confidence score would add little. The useful abstraction exposes the shape, the alternatives worth inspecting under an explicit rule, and enough evidence to explain both.
+Jev supplies probabilities over allowed answers. The library measures and describes their geometry. Application code assigns domain names and actions. The library does not determine whether a choice is correct, safe or acceptable. A concentrated distribution can still be wrong, and all offered options can be wrong.
 
-Keep four questions distinct:
+Prioritize the data model, composable predicates and exhaustive `match()` before threshold tuning. The seam must survive changes in heuristic cutoffs. Do not add acceptAtFloor, isSafe or shouldProceed: topProbabilityAtLeast and application callbacks expose the intended separation.
 
-1. Which option has the largest probability?
-2. How competitive are the alternatives?
-3. How broadly is probability distributed?
-4. What should this application do next?
+## Three layers
 
-The first three are descriptive. The fourth belongs to a policy with domain data and error costs. A clear winner can still be wrong, and every offered option can be wrong. A response alone cannot establish calibration, correctness, significance, independence or the cause of uncertainty.
+1. `DistributionData<Option>` contains observations: ranked candidates, top/runner-up probability, margin, ties, shortlist and spread metrics. `Candidate<Option>` preserves the application's literal option names.
+2. `Decision<Option>` adds a descriptive shape, profile, summary, `is(predicate)` and `match(handlers)`. The shape is a discriminant: dominant has a non-null leader, runner-up has two available leading entries, and contested has an explicit pair. Contested can include a tied top.
+3. Handlers return domain facts or perform application actions. `match()` invokes exactly one caller-supplied handler, preserving its return value, promise or exception. There is no action default inside the library.
 
-## Human vocabulary
+`top` means the first deterministic ranked entry, including in a tie. `leader` means a unique highest-probability option. Neither means correctness. `runnerUp` is the second ranked entry and may have probability zero.
 
-| Distribution (%) | Suggested description | Contenders with a half-of-leader rule |
+Choice answers expose `Decision` directly. Noul and Score keep their native semantics and put the categorical view under `distribution`. Their distribution match callbacks still describe geometry, not ordinal units or a yes/no action policy.
+
+## Shape vocabulary and provisional profile
+
+| Shape | Illustrative distribution (%) | Structural reading |
 | --- | --- | --- |
-| 97, 1, 1, 1 | Clear winner | 1 |
-| 60, 25, 10, 5 | Leader with a runner-up | 1 |
-| 42, 41, 10, 7 | Close race | 2 |
-| 34, 33, 30, 3 | Several contenders | 3 |
-| 26, 25, 25, 24 | Flat | 4 |
-| 40, 20, 15, 15, 10 | Mixed | 2 |
+| dominant | 91, 5, 3, 1 | One answer holds most probability |
+| runner-up | 64, 25, 7, 4 | One leader and a material alternative |
+| contested | 51, 45, 3, 1 | Two leading answers are close |
+| clustered | 41, 34, 22, 3 | Several meaningful contenders |
+| flat | 28, 26, 24, 22 | Little separation across positive support |
+| mixed | 60, 10, 10, 10, 10 | None of the named patterns fits |
 
-The runner-up label describes the second option's material probability; the contender rule asks a separate, narrower question. Callers can change the contender ratio. Every description returns the profile and thresholds used. These names are product vocabulary, not statistical hypothesis tests.
+Current defaults live in one module, `src/predicates.ts`, and are returned under `profile.thresholds`. Dominant: top >= .8 and margin >= .2 with a unique leader. Runner-up: top >= .5, second >= .2 and margin >= .15. Contested: margin <= .1 and combined top-two probability >= .75. Clustered: at least three options at half the top probability collectively hold >= .75. Flat: at least three positive options, smallest/top >= .75.
 
-Initial shape rules, in order: clear winner (top >= .8 and gap >= .2); flat (at least three positive options with minimum/maximum >= .8); close race (top-two mass >= .75 and runner-up/top >= .8); leader with runner-up (top >= .5, runner-up >= .2, gap >= .15); several contenders (at least three half-of-leader contenders jointly carry >= .75); otherwise mixed. Exact ties remain explicit, never silently broken into a unique winner.
+Classification precedence is dominant, flat, clustered, contested, runner-up, mixed. The third meaningful contender takes precedence over a close top-two gap. These cutoffs and precedence are an inspectable product policy; they are not significance tests or calibrated decision thresholds. We have not optimized them against a benchmark.
 
-## Three answers to “how many?”
+`mixed` is an explicit escape hatch. Forcing every distribution into a named pattern would conceal a classifier limitation. Consumers must handle it in exhaustive matching.
 
-**Contender count** is the number with p >= r times the leader, excluding zero probability. Default r = .5 is a visible heuristic. It gives one for 97/1/1/1 and two for 42/41/10/7. It does not promise coverage; report retained and excluded mass beside it.
+## Predicates and matching
 
-**Mass set** is the smallest ranked prefix reaching a requested model mass, expanded to include all options tied at the boundary. At 80%, 42/41/10/7 needs two options; at 90%, it needs three. This is model probability mass, not a confidence interval or a guaranteed prediction set. It can include more than the mathematically smallest set because arbitrary tie-breaking is undesirable. A target below 1 uses a 1e-12 mass tolerance to avoid accidental extra options from decimal roundoff; target 1 always keeps every strictly positive entry. The result reports the actual retained mass.
+The shape factories return ordinary `(data: DistributionData) => boolean` functions. Structural checks do not inspect the assigned label, so multiple checks can pass. For example, a uniform four-way distribution is both flat and clustered, but the descriptive profile calls it flat. A lower custom dominant floor may pass on a runner-up-shaped distribution. `.is()` therefore returns boolean; it does not claim a different shape via a TypeScript type guard.
 
-**Effective options** expresses concentration in units of equally weighted alternatives. Exponential Shannon entropy, exp(-sum(p log p)), is sensitive to the tail. Inverse Simpson concentration, 1/sum(p²), emphasizes larger entries. Both equal k for k equally weighted options and 1 for a point mass. Neither is an integer count of valid answers. For 42/41/10/7 these are about 3.15 and 2.78; rounding them to two would erase useful information.
+`dominant({ floor, margin })` and `runnerUp({ floor, alternativeFloor, margin })` use minimum margins. `contested({ margin, combinedFloor })` uses a maximum margin. Options are validated at predicate construction. `topProbabilityAtLeast` and `marginAtLeast` express simpler structural policies. `allOf`, `anyOf` and `not` compose with short-circuit semantics. Empty allOf is true and empty anyOf is false.
 
-Return both rather than choosing one and pretending it answers every question. Appending zero-probability options should leave these statistics and the contender shortlist unchanged. Splitting or duplicating labels changes the distribution's meaning; the library cannot repair the question taxonomy.
+`match()` is exhaustive in TypeScript and checks own function handlers at runtime for JavaScript callers. Each callback receives its shape-specific Decision type. Different callback return types form an inferred union; promises are preserved rather than implicitly awaited. Match can also return domain names, so a separate shape.as mapping API is unnecessary at this stage.
 
-The profile exposes input-sum, tie, threshold and mass-boundary tolerances. Ties use 1e-12 absolute probability tolerance; threshold comparisons use 1e-12 relative tolerance, including for very small custom contender ratios. This is numerical bookkeeping, not statistical indistinguishability. Shape's several-contenders rule uses the profile's fixed .5 ratio; changing the user shortlist ratio does not rename the distribution. `runnerUp` means the second ranked entry, which may have probability zero.
+Defer the fluent `.when(...).otherwise(...)` builder, acceptance helpers, additional scalar measures, calibrated action policies, and elaborate domain-mapping objects. They are not required to validate this seam.
 
-## API and validation
+## Literal names and runtime validation
 
-`analyze(probabilities, options?)` is a pure provider-neutral core. Accept normalized probabilities only; reject invalid values, empty maps and zero totals. Permit tiny floating point drift and explicitly report any normalization. An explicit `fromWeights` conversion is a future convenience; never guess whether 97 means .97 or an invalid probability.
+`analyze()` and `massSet()` infer option names from typed probability maps, including named interfaces and unions. Erased keys and broad numeric indices conservatively widen to strings. Numeric literal keys become their string representation, matching JavaScript enumeration.
 
-`parse(response, options?)` accepts Jev's decoded response object, validates the documented wire shape, preserves model, usage and raw data, and returns discriminated answer types. Use `parse(await call())`, or `call().then(parse)`. A synchronous parser should not silently accept a pending Promise.
+`parse()` has a typed Jev-response overload and an unknown-input overload. Known question IDs and answer kinds are preserved. String, numeric and template-pattern index signatures include undefined on lookup even when a consumer does not enable noUncheckedIndexedAccess. Unknown input cannot fabricate a closed vocabulary. Runtime validation still occurs on both overloads.
 
-Choice preserves the provider's `choice` and `confidence` and adds a distribution analysis. Verify that the reported choice is among the maxima. Noul exposes P(yes) and P(no) without inventing a provider confidence. Score preserves its ordered levels and reported score; an expectation alone can hide probability split between distant levels. The initial adapter exposes the full distribution, leaving richer ordinal interpretation for a later version.
+Typed key preservation assumes that the typed map enumerates its actual keys. TypeScript's structural typing permits extra runtime keys after widening; no function can reconstruct an erased type from such an object. Use unknown input when the static object contract is untrusted.
 
-Do not infer missing probability entries from a confidence score. Retain raw input beside derived fields so interpretations can be reproduced. Keep profile versions and all applied options in the result. Name the output `shape`, not `verdict` or `validity`.
+Probabilities must be normalized, finite and within [0,1]. Percentages are converted explicitly in examples, never guessed. Accepted sum drift is 1e-8 and any normalization is reported. Ties use absolute 1e-12 probability tolerance, comparisons use relative 1e-12 tolerance, and non-full mass boundaries use absolute 1e-12 tolerance. These are numeric tolerances, not statistical indistinguishability.
 
-The prototype accepts ordinary decoded JSON objects from the calling JavaScript realm, plus null-prototype maps. Foreign-realm objects (for example from an iframe or Node vm context) must first be decoded in the calling realm. Returned raw values are independent snapshots of input; they are not deeply frozen at runtime. Treat every result as immutable. `scoreDifference` is the provider's reported score minus the expectation recomputed from its probabilities; a discrepancy is exposed, not silently corrected or certified as consistent.
+The parser accepts same-realm decoded JSON objects and null-prototype maps. Foreign-realm objects must first be decoded locally. Results are readonly in TypeScript, not deeply frozen at runtime; treat them as immutable. Raw snapshots are independent copies. Score discrepancy is preserved in scoreDifference rather than silently corrected.
 
-## Open-source scope
+## How many contenders?
 
-Start with one small TypeScript package, no runtime dependencies, deterministic results and synthetic fixtures. Ship declarations and a conventional JavaScript build before npm publication. Keep the statistics independent of Jev's HTTP client and model lifecycle. MIT license; add Python after the vocabulary is stable.
+The returned shortlist uses `p >= contenderRatio * topProbability`, default .5, excluding zeros. It reports retained and remaining probability. This gives one contender for 97/1/1/1 and two for 42/41/10/7, with 83% retained in the latter. Altering the shortlist ratio does not alter the fixed descriptive shape profile.
 
-The next layer can be an explicit policy helper: accept, inspect shortlist, gather evidence or abstain. Policies should be tuned on held-out labeled examples by model version and task. Proper scoring rules such as Brier score and log loss, reliability curves, and risk versus coverage belong in an evaluation module, not a magic transformation of one response. Conformal prediction requires a calibration dataset and its assumptions; it cannot be promised by a parser alone.
+`massSet(probabilities, target)` returns a ranked prefix reaching a requested model mass within the declared numerical tolerance, including boundary ties. Target 1 retains every strictly positive entry. At 80%, 42/41/10/7 needs two; at 90%, three. This is model mass, not an empirical coverage guarantee or a confidence interval.
 
-## Verification
+Advanced effective counts remain available without becoming the primary API. Exponential Shannon entropy and inverse Simpson concentration both equal k for k equal probabilities and one for a point mass. For 42/41/10/7 they are about 3.15 and 2.78. Neither is the integer number of valid answers. Exact zero padding preserves these measurements; splitting labels changes what the distribution means.
 
-Check point masses, uniform distributions, ties, zero padding, key order, floating point drift, malformed responses, arbitrary user keys and the examples above. Verify mass-set coverage and monotonicity as target mass increases. Treat threshold-boundary behavior as part of the versioned profile. Use synthetic data in the public repo; do not copy private Jev inputs or session transcripts.
+## Verification and publication
+
+Tests cover the prior numerical regressions plus exhaustive dispatch, callback narrowing, mixed return-type inference, promise identity, exception propagation, overlapping predicates, short-circuit composition, literal-key preservation and cautious unknown/indexed-input typing. Synthetic examples check the common shapes. They do not establish calibration or universal defaults.
+
+The package is MIT, independent of the provider's HTTP client, dependency-free at runtime and unpublished. Before publication it needs compiled JavaScript/declarations, package-consumer checks, CI and a release policy. Python and domain evaluation come later. No private Jev inputs are public fixtures.
 
 ## Sources
 
-- [TypeSafe confidence](https://docs.typesafe.ai/confidence): confidence is derived from the distribution; alternatives can be computed from the supplied probabilities.
-- [TypeSafe API](https://docs.typesafe.ai/api): response and answer schemas.
-- [TypeSafe Score](https://docs.typesafe.ai/primitives/score): levels are ordered; score is a weighted position.
-- [Jost, Entropy and diversity (2006)](https://doi.org/10.1111/j.2006.0030-1299.14714.x): effective-number interpretation of entropy and concentration.
-- [SciPy entropy reference](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.entropy.html): Shannon entropy formula.
+- [TypeSafe confidence](https://docs.typesafe.ai/confidence): the provider exposes the full distribution behind confidence.
+- [TypeSafe API](https://docs.typesafe.ai/api): wire response schemas.
+- [TypeSafe Score](https://docs.typesafe.ai/primitives/score): ordered levels and weighted positions.
+- [Jost, Entropy and diversity (2006)](https://doi.org/10.1111/j.2006.0030-1299.14714.x): effective-number interpretations.
+- [SciPy entropy reference](https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.entropy.html): Shannon formula.

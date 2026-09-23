@@ -7,3 +7,4 @@ dist/
 .interlock/ledger/
 .worktrees/
 .DS_Store
+work/

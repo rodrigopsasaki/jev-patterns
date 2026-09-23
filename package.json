@@ -9,8 +9,9 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "demo": "node examples/distributions.mjs",
-    "typecheck": "tsc --noEmit"
+    "demo": "node examples/ownership.ts",
+    "demo:distributions": "node examples/distributions.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json"
   },
   "devDependencies": { "typescript": "^5.9.3" }
 }

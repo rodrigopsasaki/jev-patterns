@@ -1,23 +1,85 @@
-import { analyze, type Analysis, type Options } from './distribution.ts';
+import { analyze } from './decision.ts';
+import type { Decision, OptionKeys, Options } from './model.ts';
 
-export type ParsedAnswer =
-  | { readonly type: 'choice'; readonly choice: string; readonly confidence: number;
-      readonly distribution: Analysis; readonly raw: Readonly<Record<string, unknown>> }
-  | { readonly type: 'noul'; readonly yes: number; readonly no: number;
-      readonly distribution: Analysis; readonly raw: Readonly<Record<string, unknown>> }
-  | { readonly type: 'score'; readonly score: number; readonly confidence: number;
-      readonly legend: Readonly<Record<string, string>>; readonly expectedLevel: number;
-      readonly scoreDifference: number; readonly distribution: Analysis;
-      readonly raw: Readonly<Record<string, unknown>> };
+export interface JevChoiceAnswer {
+  readonly type: 'choice';
+  readonly choice: string;
+  readonly confidence: number;
+  readonly probabilities: Readonly<Record<string, number>>;
+}
 
-export interface ParsedResponse {
+export interface JevNoulAnswer { readonly type: 'noul'; readonly noul: number }
+
+export interface JevScoreAnswer {
+  readonly type: 'score';
+  readonly score: number;
+  readonly confidence: number;
+  readonly legend: Readonly<Record<string, string>>;
+  readonly probabilities: Readonly<Record<string, number>>;
+}
+
+export type JevAnswer = JevChoiceAnswer | JevNoulAnswer | JevScoreAnswer;
+
+export interface JevResponse<Answers extends Readonly<Record<string, JevAnswer>>> {
   readonly model: string;
   readonly usage: { readonly input_tokens: number; readonly output_tokens: number };
-  readonly answers: Readonly<Record<string, ParsedAnswer | undefined>>;
+  readonly answers: Answers;
+}
+
+export type ChoiceAnswer<Option extends string = string> = Decision<Option> & {
+  readonly type: 'choice';
+  /** The provider's original choice, including its tie-breaking choice. */
+  readonly choice: Option;
+  readonly confidence: number;
+  readonly raw: Readonly<Record<string, unknown>>;
+};
+
+export interface NoulAnswer {
+  readonly type: 'noul';
+  readonly yes: number;
+  readonly no: number;
+  readonly distribution: Decision<'yes' | 'no'>;
+  readonly raw: Readonly<Record<string, unknown>>;
+}
+
+export interface ScoreAnswer<Level extends string = string> {
+  readonly type: 'score';
+  readonly score: number;
+  readonly confidence: number;
+  readonly legend: Readonly<Record<Level, string>>;
+  readonly expectedLevel: number;
+  readonly scoreDifference: number;
+  readonly distribution: Decision<Level>;
+  readonly raw: Readonly<Record<string, unknown>>;
+}
+
+export type ParsedAnswer = ChoiceAnswer | NoulAnswer | ScoreAnswer;
+
+type ParsedAnswerFor<Answer extends JevAnswer> =
+  Answer extends JevChoiceAnswer ? ChoiceAnswer<OptionKeys<Answer['probabilities']>>
+  : Answer extends JevNoulAnswer ? NoulAnswer
+  : Answer extends JevScoreAnswer ? ScoreAnswer<OptionKeys<Answer['probabilities']>>
+  : never;
+
+type ParsedAnswers<Answers extends Readonly<Record<string, JevAnswer>>> = {
+  readonly [Key in keyof Answers as Key extends string | number ? `${Key}` : never]:
+    {} extends Pick<Answers, Key>
+      ? ParsedAnswerFor<Answers[Key]> | undefined
+      : ParsedAnswerFor<Answers[Key]>;
+};
+
+export interface ParsedResponse<Answers = Readonly<Record<string, ParsedAnswer | undefined>>> {
+  readonly model: string;
+  readonly usage: { readonly input_tokens: number; readonly output_tokens: number };
+  readonly answers: Answers;
   readonly raw: Readonly<Record<string, unknown>>;
 }
 
 /** Parse decoded Jev JSON. Await the SDK or HTTP call before calling this function. */
+export function parse<const Answers extends Readonly<Record<string, JevAnswer>>>(
+  input: JevResponse<Answers>, options?: Options,
+): ParsedResponse<ParsedAnswers<Answers>>;
+export function parse(input: unknown, options?: Options): ParsedResponse;
 export function parse(input: unknown, options: Options = {}): ParsedResponse {
   const response = object(input, 'response');
   const model = text(response.model, 'model');
@@ -58,7 +120,8 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
     if (!distribution.leaders.some(item => item.option === choice)) {
       throw new TypeError('choice must be a highest-probability option');
     }
-    return { type: 'choice', choice, confidence, distribution, raw };
+    const provider = { type: 'choice' as const, choice, confidence, raw };
+    return Object.assign(distribution, provider);
   }
   const legendInput = object(answer.legend, 'legend');
   const levelCount = Object.keys(legendInput).length;
