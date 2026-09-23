@@ -8,6 +8,8 @@ Jev supplies probabilities over allowed answers. The library measures and descri
 
 Prioritize the data model, composable predicates and exhaustive `match()` before threshold tuning. The seam must survive changes in heuristic cutoffs. Do not add acceptAtFloor, isSafe or shouldProceed: maximumProbabilityAtLeast and application callbacks expose the intended separation.
 
+This boundary applies to the descriptive core. A future opt-in task recipe may supply an explicit, versioned application policy and return a task result with an optional receipt. See [V2 task verbs and recipes](task-recipes.md): its proposed wrapper and offline paths share one pure interpreter. It requires no new runtime API in v0.
+
 ## Question semantics
 
 A Choice distributes model probability across alternatives for one requested selection. A split can motivate inspecting or retrieving several alternatives, but does not establish that both are correct, that the model is calibrated, or why it is divided. Real-world concepts can overlap even when the question requests one primary label.

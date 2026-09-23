@@ -201,6 +201,12 @@ The applied heuristics and numerical tolerances are recorded under `.profile` (`
 
 Explore the [public types](src/model.ts), [design](docs/proposal.md), and [examples](examples/shapes.ts) in the repository. Development files are excluded from the package archive.
 
+## Looking ahead: task verbs
+
+The next layer could expose verbs such as `classify`, `detect`, `label`, `rank`, `retrieve`, and `verify`. Each would wrap Jev calls with an inspectable, versioned task recipe: useful defaults you can adopt, configure, or recreate. An optional receipt would accompany the task result with the questions, observed responses and policy rules that produced it.
+
+This is a V2 design direction, not an available v0 API. The key boundary is a pure interpreter shared by wrapped calls and saved responses; distribution shapes remain observations underneath the task policy. See the [task recipe proposal](docs/task-recipes.md) in the repository for example signatures, receipt semantics and the seams v0 keeps open.
+
 ## Try the prototype locally
 
 Node 24.14+ and TypeScript 5.9.3+ are the current support floor. No npm install command for a published package exists yet.

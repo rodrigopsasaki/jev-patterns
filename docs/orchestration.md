@@ -10,6 +10,8 @@ The later Biome/Vitest migration used the same native fallback for runtime-test 
 
 The visual v0 README pass also used the native fallback: read-only statistics and API reviews plus a bounded installed-package example-test task. Review clarified single-selection Choice versus separate Noul propositions and caught an incorrect Choice metadata path in the draft. No new Interlock graph approval, runtime session or release is claimed.
 
+The subsequent task-verb proposal received a bounded native API review of the current core and the future live/offline interpretation boundary. It records design constraints only; no V2 runtime or new Interlock receipt was introduced.
+
 ## Normal Interlock setup
 
 Use the installed Interlock CLI from a properly configured Herdr session. Copy `.interlock/local.example.yaml` to `.interlock/local.yaml`, choose an authenticated runtime, and use the graph approval and run commands. Local runtime configuration stays outside Git.

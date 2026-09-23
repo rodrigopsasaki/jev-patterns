@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Document a future task-recipe layer with ergonomic verbs, replaceable policies, optional receipts and a shared live/offline interpreter. Keep the v0 runtime API and descriptive profile unchanged.
 - Add a visual v0 README with local badges, six distribution diagrams and executable application examples. Clarify categorical selection versus separate per-label Noul probabilities; no statistical rules or public APIs change.
 - Include README SVGs in the package and validate image references, example execution and example types against the installed archive. Asset edits select package smoke checks.
 - Add pinned Biome and Vitest, shared Git-aware affected checks, a readable dry-run plan, incremental typecheck caches, and conditional PR/full CI paths. Package smoke runs separately from full replay.
