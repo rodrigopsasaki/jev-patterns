@@ -1,5 +1,14 @@
 export { analyze } from './analysis.ts';
+export type { InspectedAnswer, InspectedChoice, InspectedScore } from './answers.ts';
 export { massSet } from './distribution.ts';
+export type {
+  InspectableAnswer,
+  InspectableChoice,
+  InspectableScore,
+  InspectedAnswerFor,
+  Inspection,
+} from './inspection.ts';
+export { inspectAnswer } from './inspection.ts';
 export type {
   ChoiceAnswer,
   JevAnswer,
@@ -38,3 +47,4 @@ export {
   paired,
   split,
 } from './predicates.ts';
+export type { InspectionIssue } from './validation.ts';

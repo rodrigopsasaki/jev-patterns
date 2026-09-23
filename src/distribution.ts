@@ -1,11 +1,11 @@
 import type { DistributionData, MassSet, OptionKeys, Options, Outcome } from './model.ts';
 import { atLeast, numericTolerances } from './numeric.ts';
+import { InputIssue } from './validation.ts';
 
 /** Describe a normalized probability map with transparent, versioned heuristics. */
 export function measure(input: unknown, options: Options = {}): DistributionData {
   const { prominenceRatio = 0.5, targetMass = 0.8 } = options;
-  requireFraction(prominenceRatio, 'prominenceRatio');
-  requireFraction(targetMass, 'targetMass');
+  validateOptions(options);
   const { sorted, total, first } = readProbabilities(input);
   const second = sorted[1];
   const maxima = sorted.filter((item) => tied(item.probability, first.probability));
@@ -87,7 +87,7 @@ function selectProminent(sorted: readonly Outcome[], first: number, ratio: numbe
 
 function readProbabilities(input: unknown) {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
-    throw new TypeError('probabilities must be a nonempty map');
+    throw new InputIssue(['probabilities'], 'invalid-type', 'probabilities must be a nonempty map');
   }
   const entries = Object.entries(input);
   const sorted = entries.map(([option, probability]) => {
@@ -97,21 +97,36 @@ function readProbabilities(input: unknown) {
       probability < 0 ||
       probability > 1
     ) {
-      throw new TypeError(`Probability for ${JSON.stringify(option)} must be finite and in [0, 1]`);
+      throw new InputIssue(
+        ['probabilities', option],
+        typeof probability === 'number' ? 'out-of-range' : 'invalid-type',
+        `Probability for ${JSON.stringify(option)} must be finite and in [0, 1]`,
+      );
     }
     return { option, probability };
   });
   // Fix the accumulation order as well as the display order for reproducibility.
   sorted.sort((a, b) => b.probability - a.probability || compareKeys(a.option, b.option));
   const first = sorted[0];
-  if (!first) throw new TypeError('probabilities must be nonempty');
+  if (!first)
+    throw new InputIssue(['probabilities'], 'invalid-total', 'probabilities must be nonempty');
   const total = sum(sorted.map((item) => item.probability));
   if (total <= 0 || Math.abs(total - 1) > numericTolerances.inputSumAbsolute) {
-    throw new TypeError(`Probabilities must sum to 1; received ${total}`);
+    throw new InputIssue(
+      ['probabilities'],
+      'invalid-total',
+      `Probabilities must sum to 1; received ${total}`,
+    );
   }
   // These outcome objects are owned by this function, never borrowed from input.
   for (const item of sorted) item.probability /= total;
   return { sorted, total, first };
+}
+
+export function validateOptions(options: Options): void {
+  const { prominenceRatio = 0.5, targetMass = 0.8 } = options;
+  requireFraction(prominenceRatio, 'prominenceRatio');
+  requireFraction(targetMass, 'targetMass');
 }
 
 function requireFraction(value: number, name: string) {

@@ -1,6 +1,6 @@
 # Release policy
 
-`jev-patterns` is an experimental open-source project. The v0.1.0 GitHub prerelease distributes a compiled package tarball. It is not published to npm; `private: true` prevents accidental registry publication. The npm name was unregistered when checked on 2026-09-23, which does not reserve it.
+`jev-patterns` is an experimental open-source project. v0.2.0 is the first npm release and includes the individual-answer API. The earlier v0.1.0 release remains GitHub-only. Each release has a compiled package tarball on GitHub, with the same package distributed through npm.
 
 ## Compatibility contract
 
@@ -20,6 +20,12 @@ The package ships ESM JavaScript and TypeScript declarations. The current suppor
 
 Never replace an existing release artifact or tag to conceal a defect. Fix regressions in a new version with a reproducer and a documented correction.
 
-## First npm release
+## npm publication
 
-Recheck package-name availability and confirm ownership immediately before publication. Confirm the public repository metadata, reporting links, install instructions and exact package contents. Remove `private: true` only in the deliberate npm release change and use an explicitly authorized maintainer publication of the verified artifact. GitHub publication alone neither reserves the npm name nor authorizes an npm publish.
+1. Use an explicitly authorized maintainer release. Authenticate to the public npm registry and confirm the publishing identity and package ownership. For the first publication, verify the package name remains available.
+2. Complete the same release checks and exact-commit hosted CI required above. Inspect the packed files, declarations, public metadata, and install instructions. Never publish an unreviewed working directory.
+3. Publish that exact verified tarball with public access and the intended dist-tag. The package's `publishConfig` fixes the public registry and access level. Do not rebuild a different artifact during publication.
+4. Verify registry version, dist-tag, ownership, and tarball integrity, then install from the registry in a fresh consumer and exercise the public API.
+5. Attach the same tarball and checksum to the matching GitHub release. Never replace an existing version, tag, or artifact. Fix publication defects in a new version.
+
+CI currently validates releases but does not publish them automatically. Phyxius-style trusted publishing can be configured separately once the package exists; it requires an npm trust relationship for this repository and its publishing workflow. Do not reuse credentials or trust settings from another package.
