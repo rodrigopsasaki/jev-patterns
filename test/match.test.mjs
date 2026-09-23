@@ -1,20 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  allOf, analyze, anyOf, clustered, contested, dominant, flat, marginAtLeast,
-  not, parse, runnerUp, topProbabilityAtLeast,
+  allOf, analyze, anyOf, clustered, split, dominant, flat, gapAtLeast,
+  not, parse, paired, maximumProbabilityAtLeast,
 } from '../src/index.ts';
 
 const fromPercent = values => analyze(Object.fromEntries(values.map((p, i) => [String(i), p / 100])));
 const handlers = operation => ({
-  dominant: operation, 'runner-up': operation, contested: operation,
+  dominant: operation, 'paired': operation, split: operation,
   clustered: operation, flat: operation, mixed: operation,
 });
 
 test('the five illustrative shapes and the explicit remainder are reachable', () => {
   for (const [values, shape] of [
-    [[91, 5, 3, 1], 'dominant'], [[64, 25, 7, 4], 'runner-up'],
-    [[51, 45, 3, 1], 'contested'], [[41, 34, 22, 3], 'clustered'],
+    [[91, 5, 3, 1], 'dominant'], [[64, 25, 7, 4], 'paired'],
+    [[51, 45, 3, 1], 'split'], [[41, 34, 22, 3], 'clustered'],
     [[28, 26, 24, 22], 'flat'], [[60, 10, 10, 10, 10], 'mixed'],
   ]) {
     const result = fromPercent(values);
@@ -23,26 +23,26 @@ test('the five illustrative shapes and the explicit remainder are reachable', ()
   }
 });
 
-test('same top probability retains the difference between a serious rival and a spread tail', () => {
-  const rival = fromPercent([60, 40]);
+test('same first probability retains the difference between a substantial second share and a spread tail', () => {
+  const unequalPair = fromPercent([60, 40]);
   const tail = fromPercent([60, 10, 10, 10, 10]);
-  assert.ok(Math.abs(rival.topProbability - tail.topProbability) < 1e-12);
-  assert.equal(rival.shape, 'runner-up');
+  assert.ok(Math.abs(unequalPair.maximumProbability - tail.maximumProbability) < 1e-12);
+  assert.equal(unequalPair.shape, 'paired');
   assert.equal(tail.shape, 'mixed');
-  assert.equal(rival.runnerUpProbability, 0.4);
-  assert.ok(Math.abs(tail.runnerUpProbability - 0.1) < 1e-12);
-  assert.notEqual(rival.metrics.entropyNats, tail.metrics.entropyNats);
+  assert.equal(unequalPair.secondProbability, 0.4);
+  assert.ok(Math.abs(tail.secondProbability - 0.1) < 1e-12);
+  assert.notEqual(unequalPair.metrics.entropyNats, tail.metrics.entropyNats);
 });
 
-test('match invokes exactly one callback, preserves its value and passes the decision', () => {
+test('match invokes exactly one callback, preserves its value and passes the distribution', () => {
   const result = fromPercent([48, 44, 5, 3]);
   const expected = { next: 'request-context' };
   let count = 0;
   const onUnexpected = () => { throw new Error('Wrong handler'); };
-  const actual = result.match({ ...handlers(onUnexpected), contested: d => {
+  const actual = result.match({ ...handlers(onUnexpected), split: d => {
     count++;
     assert.equal(d, result);
-    assert.equal(d.frontRunners[1], d.runnerUp);
+    assert.equal(d.pair[1], d.second);
     return expected;
   } });
   assert.equal(actual, expected);
@@ -71,17 +71,17 @@ test('predicates are independent of shape precedence and can overlap', () => {
   assert.equal(result.is(flat()), true);
   assert.equal(result.is(clustered()), true);
   const custom = fromPercent([64, 25, 7, 4]);
-  assert.equal(custom.shape, 'runner-up');
+  assert.equal(custom.shape, 'paired');
   assert.equal(custom.is(dominant({ floor: 0.6 })), true);
-  assert.equal(custom.shape, 'runner-up');
+  assert.equal(custom.shape, 'paired');
 });
 
 test('structural predicates compose and short-circuit', () => {
   const result = fromPercent([48, 44, 5, 3]);
-  assert.equal(result.is(allOf(contested(), not(dominant()))), true);
-  assert.equal(result.is(anyOf(dominant(), contested())), true);
-  assert.equal(result.is(topProbabilityAtLeast(0.5)), false);
-  assert.equal(result.is(marginAtLeast(0.1)), false);
+  assert.equal(result.is(allOf(split(), not(dominant()))), true);
+  assert.equal(result.is(anyOf(dominant(), split())), true);
+  assert.equal(result.is(maximumProbabilityAtLeast(0.5)), false);
+  assert.equal(result.is(gapAtLeast(0.1)), false);
   const never = () => { throw new Error('Must short circuit'); };
   assert.equal(result.is(allOf(() => false, never)), false);
   assert.equal(result.is(anyOf(() => true, never)), true);
@@ -91,21 +91,21 @@ test('structural predicates compose and short-circuit', () => {
 
 test('ties and point masses retain honest structural facts', () => {
   const tied = fromPercent([50, 50]);
-  assert.equal(tied.shape, 'contested');
-  assert.equal(tied.leader, null);
-  assert.equal(tied.is(dominant({ floor: 0, margin: 0 })), false);
-  tied.match({ ...handlers(() => {}), contested: d => assert.equal(d.frontRunners.length, 2) });
+  assert.equal(tied.shape, 'split');
+  assert.equal(tied.uniqueMaximum, null);
+  assert.equal(tied.is(dominant({ floor: 0, gap: 0 })), false);
+  tied.match({ ...handlers(() => {}), split: d => assert.equal(d.pair.length, 2) });
   const point = analyze({ only: 1 });
   assert.equal(point.shape, 'dominant');
-  assert.equal(point.runnerUp, null);
-  assert.equal(point.is(contested({ margin: 1, combinedFloor: 0 })), false);
+  assert.equal(point.second, null);
+  assert.equal(point.is(split({ gap: 1, combinedFloor: 0 })), false);
 });
 
 test('threshold options reject malformed values at predicate construction', () => {
   for (const value of [NaN, Infinity, -0.1, 1.1]) {
     assert.throws(() => dominant({ floor: value }), TypeError);
-    assert.throws(() => contested({ margin: value }), TypeError);
-    assert.throws(() => runnerUp({ alternativeFloor: value }), TypeError);
+    assert.throws(() => split({ gap: value }), TypeError);
+    assert.throws(() => paired({ secondFloor: value }), TypeError);
     assert.throws(() => flat({ minimumRatio: value }), TypeError);
     assert.throws(() => clustered({ combinedFloor: value }), TypeError);
   }
@@ -118,8 +118,8 @@ test('domain naming is an ordinary match result; choice parsing exposes the same
     answers: { ownership: { type: 'choice', choice: 'platform', confidence: 0.2,
       probabilities: { platform: 0.41, product: 0.34, infra: 0.22, other: 0.03 } } } });
   assert.equal(response.answers.ownership.match({
-    dominant: () => 'clear-owner', 'runner-up': () => 'secondary-owner',
-    contested: () => 'ownership-conflict', clustered: () => 'cross-functional',
+    dominant: () => 'clear-owner', 'paired': () => 'secondary-owner',
+    split: () => 'ownership-conflict', clustered: () => 'cross-functional',
     flat: () => 'no-clear-owner', mixed: () => 'unclassified-ownership',
   }), 'cross-functional');
   assert.equal(response.answers.ownership.choice, 'platform');

@@ -8,7 +8,7 @@ const choice = () => ({ type: 'choice', choice: 'a', probabilities: { a: 0.42, b
 test('choice keeps provider confidence and provenance distinct from analysis', () => {
   const input = response({ route: choice() });
   const result = parse(input);
-  assert.equal(result.answers.route.shape, 'contested');
+  assert.equal(result.answers.route.shape, 'split');
   assert.equal(result.answers.route.confidence, 0.123);
   assert.deepEqual(result.raw, input);
   input.answers.route.confidence = 1;
@@ -20,7 +20,7 @@ test('noul preserves direction without inventing confidence', () => {
   const result = parse(response({ urgent: { type: 'noul', noul: 0.03 } })).answers.urgent;
   assert.equal(result.yes, 0.03);
   assert.equal(result.no, 0.97);
-  assert.equal(result.distribution.leader.option, 'no');
+  assert.equal(result.distribution.uniqueMaximum.option, 'no');
   assert.equal(Object.hasOwn(result, 'confidence'), false);
 });
 
@@ -31,8 +31,8 @@ test('score exposes a distant split that its mean hides', () => {
     legend: { 0: 'Low', 1: 'Medium', 2: 'High' },
   } })).answers.severity;
   assert.equal(result.expectedLevel, 1);
-  assert.equal(result.distribution.leader, null);
-  assert.deepEqual(result.distribution.contenders.items.map(item => item.option), ['0', '2']);
+  assert.equal(result.distribution.uniqueMaximum, null);
+  assert.deepEqual(result.distribution.prominent.items.map(item => item.option), ['0', '2']);
 });
 
 test('arbitrary option and question keys cannot modify prototypes', () => {
@@ -40,7 +40,7 @@ test('arbitrary option and question keys cannot modify prototypes', () => {
   const input = response(Object.fromEntries([['__proto__', answer]]));
   const result = parse(input);
   assert.equal(Object.hasOwn(result.answers, '__proto__'), true);
-  assert.equal(result.answers.__proto__.leader.option, '__proto__');
+  assert.equal(result.answers.__proto__.uniqueMaximum.option, '__proto__');
   assert.equal(Object.getPrototypeOf(result.answers), null);
 });
 
@@ -69,5 +69,5 @@ test('bad responses are rejected with the question id in the error', () => {
 test('a provider may select either option in an exact tie', () => {
   const result = parse(response({ route: { ...choice(), choice: 'b', probabilities: { a: 0.5, b: 0.5 } } }));
   assert.equal(result.answers.route.choice, 'b');
-  assert.equal(result.answers.route.leader, null);
+  assert.equal(result.answers.route.uniqueMaximum, null);
 });

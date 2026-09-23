@@ -1,50 +1,65 @@
 # jev-lens
 
-Pattern matching over uncertainty. Jev provides a distribution; this library describes its shape; your application decides what that means.
+Describe how probability is distributed across outcomes. Jev provides probabilities; this library exposes their concentration and spread; applications interpret those observations in context.
 
 An independent, experimental TypeScript library with no runtime dependencies or network calls. MIT licensed. The working name and API are provisional; nothing is published to npm or GitHub.
 
-## Start with the application code
+## Describe the distribution
 
 ```ts
 import { analyze } from './src/index.ts';
 
-const ownership = analyze({
-  platform: 0.48,
-  product: 0.44,
-  infrastructure: 0.05,
-  other: 0.03,
-});
+const distribution = analyze({ a: 0.64, b: 0.25, c: 0.07, d: 0.04 });
 
-const state = ownership.match({
-  dominant: d => ({ kind: 'clear-owner', owner: d.leader.option }) as const,
-  'runner-up': d => ({ kind: 'secondary-owner', owner: d.runnerUp.option }) as const,
-  contested: d => ({ kind: 'ownership-conflict', candidates: d.frontRunners }) as const,
-  clustered: d => ({ kind: 'cross-functional', candidates: d.contenders.items }) as const,
-  flat: () => ({ kind: 'no-clear-owner' }) as const,
-  mixed: () => ({ kind: 'unclassified-ownership' }) as const,
-});
-
-if (state.kind === 'ownership-conflict') {
-  state.candidates; // A typed pair retaining the four option names.
-}
+distribution.shape;              // "paired"
+distribution.first;              // { option: "a", probability: 0.64 }
+distribution.second;             // { option: "b", probability: 0.25 }
+distribution.gap;                // 0.39
+distribution.uniqueMaximum;      // The sole maximum; null when maxima are tied.
+distribution.metrics.firstTwoProbability; // 0.89
 ```
 
-`match()` requires every shape, narrows each callback's argument, and preserves the union of callback return values, including promises. It invokes exactly one handler. Exceptions and rejected promises belong to the caller; no fallback action is invented. Callbacks receive the distribution view; provider metadata remains available on the enclosing parsed answer.
+Working vocabulary:
 
-`mixed` keeps distributions that don't meet a named pattern explicit. For example, 60/40 has a meaningful runner-up, while 60/10/10/10/10 has uncertainty dispersed among smaller alternatives. The current vocabulary leaves the latter mixed and retains its full measurements.
+| Shape | Example (%) | Description |
+| --- | --- | --- |
+| dominant | 91 / 5 / 3 / 1 | Most probability on one outcome |
+| paired | 64 / 25 / 7 / 4 | Two substantial, unequal shares |
+| split | 51 / 45 / 3 / 1 | Two substantial, similar shares |
+| clustered | 41 / 34 / 22 / 3 | Several outcomes hold most of the probability |
+| flat | 28 / 26 / 24 / 22 | Similar probabilities across positive support |
+| mixed | 60 / 10 / 10 / 10 / 10 | No named pattern matches the current profile |
+
+`paired` and `split` describe concentration on two outcomes, while keeping the remaining probability visible. These terms describe the distribution, not correctness, permission or a selected outcome. `mixed` keeps the limits of the current vocabulary explicit.
+
+## Match with typed observations
+
+```ts
+const description = distribution.match({
+  dominant: d => `${d.uniqueMaximum.option} contains most of the probability.`,
+  paired: d => `${d.pair[0].option} and ${d.pair[1].option} have substantial, unequal shares.`,
+  split: d => `${d.pair[0].option} and ${d.pair[1].option} have substantial, similar shares.`,
+  clustered: () => 'Several outcomes contain most of the probability.',
+  flat: () => 'The positive probabilities are similar in size.',
+  mixed: () => 'No named concentration pattern matches.',
+});
+```
+
+Option names remain `"a" | "b" | "c" | "d"` throughout. Both paired and split callbacks expose a typed pair. Dominant guarantees a non-null uniqueMaximum; split can include tied maxima.
+
+`match()` requires every shape, narrows each callback's argument, and preserves the union of callback return values, including promises. It invokes exactly one handler. Exceptions and rejected promises belong to the caller; no fallback action is invented. Callbacks receive the distribution view; provider metadata remains available on the enclosing parsed answer. Callers can return domain names through the same method.
 
 ## Predicates describe structure
 
 ```ts
-import { allOf, contested, dominant, marginAtLeast } from './src/index.ts';
+import { allOf, dominant, gapAtLeast, split } from './src/index.ts';
 
-const strongLead = allOf(dominant({ floor: 0.9 }), marginAtLeast(0.3));
-ownership.is(strongLead);
-contested({ margin: 0.08 })(ownership);
+const concentrated = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
+distribution.is(concentrated);
+split({ gap: 0.08 })(distribution);
 ```
 
-Predicates are ordinary functions. Compose them with `allOf`, `anyOf` and `not`, or write one yourself. They can overlap: a flat distribution can also satisfy `clustered()`. Customizing a predicate does not change the assigned shape or narrow it to a different TypeScript variant. These checks do not mean accept, reject, safe or correct.
+Predicates are ordinary functions. Compose them with `allOf`, `anyOf` and `not`, or write one yourself. They can overlap: a flat distribution can also satisfy `clustered()`. Customizing a predicate does not change the assigned shape or narrow it to a different TypeScript variant. Application policy lives in the calling code.
 
 ## Jev integration
 
@@ -52,22 +67,22 @@ Predicates are ordinary functions. Compose them with `allOf`, `anyOf` and `not`,
 import { parse } from './src/index.ts';
 
 const response = parse(await jevJudge(callContext));
-const ownership = response.answers.ownership;
+const distribution = response.answers.ownership;
 ```
 
-With a typed Jev response, known question IDs, answer kinds and option names survive parsing. Choice answers expose the decision methods directly: `ownership.match(...)`, `ownership.is(...)`, `ownership.shape`. A dominant branch guarantees a non-null `leader`; a contested branch provides a two-element `frontRunners` tuple, but may have no unique leader.
+With a typed Jev response, known question IDs, answer kinds and option names survive parsing. Choice answers expose `match()`, `is()`, `shape` and the measurements directly. For unknown JSON or open answer dictionaries, lookups remain potentially missing and answer-kind checks remain necessary.
 
-For `unknown` JSON or open answer dictionaries, lookups remain potentially missing and answer-kind checks remain necessary. Noul retains `yes` and `no`; Score retains ordered-level data. Their categorical views are available under `.distribution`. Generic shape labels alone do not describe ordinal distance between Score levels.
+Noul retains yes and no; Score retains ordered-level data. Their categorical views are under `.distribution`. Shape labels alone do not describe ordinal distance between Score levels. The adapter validates runtime input and preserves the provider's original choice, confidence and raw snapshots. Static key preservation assumes the typed probability map describes its actual enumerable keys.
 
-The adapter validates runtime input and keeps provider `choice`, `confidence` and raw snapshots separate from the derived geometry. Known option names presume that the typed probability map describes its actual enumerable keys; TypeScript cannot certify extra hidden keys in a structurally widened object.
+## Measurements and provisional thresholds
 
-## Data and thresholds
+`sorted` holds descending probabilities. `first` is always available; ordering tied entries does not create a unique maximum. `maxima` retains ties, and `uniqueMaximum` is null for a tie. `second` is null only when there is one entry.
 
-The common fields are `top`, `leader`, `runnerUp`, `topProbability`, `runnerUpProbability`, `margin` and `contenders`. `top` is always available in deterministic rank order; `leader` is null when the top is tied. `contenders` groups `items`, `count`, `probability` and `remainingProbability`. The shortlist is a configurable relative-to-leader rule, not proof of validity or guaranteed real-world coverage.
+`prominent` groups outcomes above a configurable fraction of the maximum, with `items`, `count`, `probability` and `remainingProbability`. This is a descriptive subset, not a count of valid answers. Advanced statistics remain under `metrics`; applied defaults and numerical tolerances remain under `profile`.
 
-Advanced statistics remain under `metrics`. The applied defaults and numerical tolerances remain under `profile`. Default shape thresholds are deliberately provisional; they are isolated in `src/predicates.ts`. The first priority is a stable contract between observations, named shapes and application callbacks.
+Thresholds are provisional and isolated in `src/predicates.ts`. This revision changes the vocabulary without retuning classification. The next iteration can improve the names and their distinctions while keeping the data/predicate/match contract intact.
 
-See [the design](docs/proposal.md), [the public types](src/model.ts), [the runnable example](examples/ownership.ts), and [the compile-time contracts](test/types.test.ts).
+See [the design](docs/proposal.md), [public types](src/model.ts), [runnable example](examples/shapes.ts), [domain example](examples/ownership.ts) and [compile-time contracts](test/types.test.ts).
 
 ## Development
 

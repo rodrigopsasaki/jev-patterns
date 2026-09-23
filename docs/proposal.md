@@ -1,47 +1,55 @@
 # Pattern matching over uncertainty
 
-Status: experimental descriptive-v1 contract, 2026-09-23. This supersedes the first prototype vocabulary. Historical review reports retain their original source snapshots.
+Status: experimental descriptive-v2 contract, 2026-09-23. This supersedes the first prototype vocabulary. Historical review reports retain their original source snapshots.
 
 ## Authority boundary
 
 Jev supplies probabilities over allowed answers. The library measures and describes their geometry. Application code assigns domain names and actions. The library does not determine whether a choice is correct, safe or acceptable. A concentrated distribution can still be wrong, and all offered options can be wrong.
 
-Prioritize the data model, composable predicates and exhaustive `match()` before threshold tuning. The seam must survive changes in heuristic cutoffs. Do not add acceptAtFloor, isSafe or shouldProceed: topProbabilityAtLeast and application callbacks expose the intended separation.
+Prioritize the data model, composable predicates and exhaustive `match()` before threshold tuning. The seam must survive changes in heuristic cutoffs. Do not add acceptAtFloor, isSafe or shouldProceed: maximumProbabilityAtLeast and application callbacks expose the intended separation.
+
+## Vocabulary
+
+The current labels describe concentration. `dominant` means one outcome holds most of the probability; `paired` means two substantial unequal shares; `split` means two substantial similar shares; `clustered` means several outcomes hold most of the probability; `flat` means similar probabilities across positive support. These are working names, not a claim that the taxonomy is final.
+
+`Distribution`, `Outcome`, `first`, `second`, `maxima`, `uniqueMaximum`, `gap` and `prominent` name observations. No outcome is selected by this vocabulary. `paired` and `split` can have nonzero probability outside their two-element group. Group size and balance are separate aspects of the distribution even when summarized by one label.
+
+This terminology revision changes the names and adds the explicit pair to the paired view. It leaves the numerical classification rules unchanged. The profile is versioned as descriptive-v2 so stored interpretations remain attributable.
 
 ## Three layers
 
-1. `DistributionData<Option>` contains observations: ranked candidates, top/runner-up probability, margin, ties, shortlist and spread metrics. `Candidate<Option>` preserves the application's literal option names.
-2. `Decision<Option>` adds a descriptive shape, profile, summary, `is(predicate)` and `match(handlers)`. The shape is a discriminant: dominant has a non-null leader, runner-up has two available leading entries, and contested has an explicit pair. Contested can include a tied top.
+1. `DistributionData<Option>` contains observations: sorted outcomes, largest/second-largest probability, gap, ties, shortlist and spread metrics. `Outcome<Option>` preserves the application's literal option names.
+2. `Distribution<Option>` adds a descriptive shape, profile, summary, `is(predicate)` and `match(handlers)`. The shape is a discriminant: dominant has a non-null uniqueMaximum; paired and split each provide an explicit pair. Split can include tied maxima.
 3. Handlers return domain facts or perform application actions. `match()` invokes exactly one caller-supplied handler, preserving its return value, promise or exception. There is no action default inside the library.
 
-`top` means the first deterministic ranked entry, including in a tie. `leader` means a unique highest-probability option. Neither means correctness. `runnerUp` is the second ranked entry and may have probability zero.
+`first` means the first entry in descending probability order, with deterministic ordering of ties. `uniqueMaximum` means a unique highest-probability option. Neither means correctness. `second` is the second sorted entry and may have probability zero.
 
-Choice answers expose `Decision` directly. Noul and Score keep their native semantics and put the categorical view under `distribution`. Their distribution match callbacks still describe geometry, not ordinal units or a yes/no action policy.
+Choice answers expose `Distribution` directly. Noul and Score keep their native semantics and put the categorical view under `distribution`. Their distribution match callbacks still describe geometry, not ordinal units or a yes/no action policy.
 
 ## Shape vocabulary and provisional profile
 
 | Shape | Illustrative distribution (%) | Structural reading |
 | --- | --- | --- |
 | dominant | 91, 5, 3, 1 | One answer holds most probability |
-| runner-up | 64, 25, 7, 4 | One leader and a material alternative |
-| contested | 51, 45, 3, 1 | Two leading answers are close |
-| clustered | 41, 34, 22, 3 | Several meaningful contenders |
+| paired | 64, 25, 7, 4 | Two substantial, unequal shares |
+| split | 51, 45, 3, 1 | Two substantial, similar shares |
+| clustered | 41, 34, 22, 3 | Several outcomes hold most of the probability |
 | flat | 28, 26, 24, 22 | Little separation across positive support |
 | mixed | 60, 10, 10, 10, 10 | None of the named patterns fits |
 
-Current defaults live in one module, `src/predicates.ts`, and are returned under `profile.thresholds`. Dominant: top >= .8 and margin >= .2 with a unique leader. Runner-up: top >= .5, second >= .2 and margin >= .15. Contested: margin <= .1 and combined top-two probability >= .75. Clustered: at least three options at half the top probability collectively hold >= .75. Flat: at least three positive options, smallest/top >= .75.
+Current defaults live in one module, `src/predicates.ts`, and are returned under `profile.thresholds`. Dominant: maximum >= .8 and gap >= .2 with a unique maximum. Paired: maximum >= .5, second >= .2 and gap >= .15. Split: gap <= .1 and combined first-two probability >= .75. Clustered: at least three options at half the maximum probability collectively hold >= .75. Flat: at least three positive options, smallest/maximum >= .75.
 
-Classification precedence is dominant, flat, clustered, contested, runner-up, mixed. The third meaningful contender takes precedence over a close top-two gap. These cutoffs and precedence are an inspectable product policy; they are not significance tests or calibrated decision thresholds. We have not optimized them against a benchmark.
+Classification precedence is dominant, flat, clustered, split, paired, mixed. A prominent third outcome takes precedence over a small gap between the two largest probabilities. These cutoffs and precedence are an inspectable product policy; they are not significance tests or validated application thresholds. We have not optimized them against a benchmark.
 
 `mixed` is an explicit escape hatch. Forcing every distribution into a named pattern would conceal a classifier limitation. Consumers must handle it in exhaustive matching.
 
 ## Predicates and matching
 
-The shape factories return ordinary `(data: DistributionData) => boolean` functions. Structural checks do not inspect the assigned label, so multiple checks can pass. For example, a uniform four-way distribution is both flat and clustered, but the descriptive profile calls it flat. A lower custom dominant floor may pass on a runner-up-shaped distribution. `.is()` therefore returns boolean; it does not claim a different shape via a TypeScript type guard.
+The shape factories return ordinary `(data: DistributionData) => boolean` functions. Structural checks do not inspect the assigned label, so multiple checks can pass. For example, a uniform four-way distribution is both flat and clustered, but the descriptive profile calls it flat. A lower custom dominant floor may pass on a paired-shaped distribution. `.is()` therefore returns boolean; it does not claim a different shape via a TypeScript type guard.
 
-`dominant({ floor, margin })` and `runnerUp({ floor, alternativeFloor, margin })` use minimum margins. `contested({ margin, combinedFloor })` uses a maximum margin. Options are validated at predicate construction. `topProbabilityAtLeast` and `marginAtLeast` express simpler structural policies. `allOf`, `anyOf` and `not` compose with short-circuit semantics. Empty allOf is true and empty anyOf is false.
+`dominant({ floor, gap })` and `paired({ floor, secondFloor, gap })` use minimum gaps. `split({ gap, combinedFloor })` uses a maximum gap. Options are validated at predicate construction. `maximumProbabilityAtLeast` and `gapAtLeast` express simpler structural policies. `allOf`, `anyOf` and `not` compose with short-circuit semantics. Empty allOf is true and empty anyOf is false.
 
-`match()` is exhaustive in TypeScript and checks own function handlers at runtime for JavaScript callers. Each callback receives its shape-specific Decision type. Different callback return types form an inferred union; promises are preserved rather than implicitly awaited. Match can also return domain names, so a separate shape.as mapping API is unnecessary at this stage.
+`match()` is exhaustive in TypeScript and checks own function handlers at runtime for JavaScript callers. Each callback receives its shape-specific Distribution type. Different callback return types form an inferred union; promises are preserved rather than implicitly awaited. Match can also return domain names, so a separate shape.as mapping API is unnecessary at this stage.
 
 Defer the fluent `.when(...).otherwise(...)` builder, acceptance helpers, additional scalar measures, calibrated action policies, and elaborate domain-mapping objects. They are not required to validate this seam.
 
@@ -57,11 +65,11 @@ Probabilities must be normalized, finite and within [0,1]. Percentages are conve
 
 The parser accepts same-realm decoded JSON objects and null-prototype maps. Foreign-realm objects must first be decoded locally. Results are readonly in TypeScript, not deeply frozen at runtime; treat them as immutable. Raw snapshots are independent copies. Score discrepancy is preserved in scoreDifference rather than silently corrected.
 
-## How many contenders?
+## How many prominent outcomes?
 
-The returned shortlist uses `p >= contenderRatio * topProbability`, default .5, excluding zeros. It reports retained and remaining probability. This gives one contender for 97/1/1/1 and two for 42/41/10/7, with 83% retained in the latter. Altering the shortlist ratio does not alter the fixed descriptive shape profile.
+The returned shortlist uses `p >= prominenceRatio * maximumProbability`, default .5, excluding zeros. It reports retained and remaining probability. This gives one prominent outcome for 97/1/1/1 and two for 42/41/10/7, with 83% retained in the latter. Altering the shortlist ratio does not alter the fixed descriptive shape profile.
 
-`massSet(probabilities, target)` returns a ranked prefix reaching a requested model mass within the declared numerical tolerance, including boundary ties. Target 1 retains every strictly positive entry. At 80%, 42/41/10/7 needs two; at 90%, three. This is model mass, not an empirical coverage guarantee or a confidence interval.
+`massSet(probabilities, target)` returns a sorted prefix reaching a requested model mass within the declared numerical tolerance, including boundary ties. Target 1 retains every strictly positive entry. At 80%, 42/41/10/7 needs two; at 90%, three. This is model mass, not an empirical coverage guarantee or a confidence interval.
 
 Advanced effective counts remain available without becoming the primary API. Exponential Shannon entropy and inverse Simpson concentration both equal k for k equal probabilities and one for a point mass. For 42/41/10/7 they are about 3.15 and 2.78. Neither is the integer number of valid answers. Exact zero padding preserves these measurements; splitting labels changes what the distribution means.
 

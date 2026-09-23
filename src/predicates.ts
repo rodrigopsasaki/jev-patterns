@@ -3,37 +3,37 @@ import { atLeast, requireProbability } from './numeric.ts';
 
 /** Provisional descriptive defaults. Version the profile when changing them. */
 export const defaultThresholds: ShapeThresholds = Object.freeze({
-  dominant: Object.freeze({ floor: 0.8, margin: 0.2 }),
-  runnerUp: Object.freeze({ floor: 0.5, alternativeFloor: 0.2, margin: 0.15 }),
-  contested: Object.freeze({ margin: 0.1, combinedFloor: 0.75 }),
+  dominant: Object.freeze({ floor: 0.8, gap: 0.2 }),
+  paired: Object.freeze({ floor: 0.5, secondFloor: 0.2, gap: 0.15 }),
+  split: Object.freeze({ gap: 0.1, combinedFloor: 0.75 }),
   clustered: Object.freeze({ minimumCount: 3, combinedFloor: 0.75, ratio: 0.5 }),
   flat: Object.freeze({ minimumRatio: 0.75, minimumCount: 3 }),
 });
 
-export function dominant(options: { readonly floor?: number; readonly margin?: number } = {}): Predicate {
+export function dominant(options: { readonly floor?: number; readonly gap?: number } = {}): Predicate {
   const floor = requireProbability(options.floor ?? defaultThresholds.dominant.floor, 'floor');
-  const margin = requireProbability(options.margin ?? defaultThresholds.dominant.margin, 'margin');
-  return data => data.leader !== null && atLeast(data.topProbability, floor) && atLeast(data.margin, margin);
+  const gap = requireProbability(options.gap ?? defaultThresholds.dominant.gap, 'gap');
+  return data => data.uniqueMaximum !== null && atLeast(data.maximumProbability, floor) && atLeast(data.gap, gap);
 }
 
-/** margin is a minimum lead; alternativeFloor is the runner-up's minimum probability. */
-export function runnerUp(options: {
-  readonly floor?: number; readonly alternativeFloor?: number; readonly margin?: number;
+/** gap is a minimum separation; secondFloor is the second-largest probability's floor. */
+export function paired(options: {
+  readonly floor?: number; readonly secondFloor?: number; readonly gap?: number;
 } = {}): Predicate {
-  const floor = requireProbability(options.floor ?? defaultThresholds.runnerUp.floor, 'floor');
-  const alternative = requireProbability(options.alternativeFloor ?? defaultThresholds.runnerUp.alternativeFloor, 'alternativeFloor');
-  const margin = requireProbability(options.margin ?? defaultThresholds.runnerUp.margin, 'margin');
-  return data => data.leader !== null && data.runnerUp !== null
-    && atLeast(data.topProbability, floor) && atLeast(data.runnerUpProbability, alternative)
-    && atLeast(data.margin, margin);
+  const floor = requireProbability(options.floor ?? defaultThresholds.paired.floor, 'floor');
+  const alternative = requireProbability(options.secondFloor ?? defaultThresholds.paired.secondFloor, 'secondFloor');
+  const gap = requireProbability(options.gap ?? defaultThresholds.paired.gap, 'gap');
+  return data => data.uniqueMaximum !== null && data.second !== null
+    && atLeast(data.maximumProbability, floor) && atLeast(data.secondProbability, alternative)
+    && atLeast(data.gap, gap);
 }
 
-/** margin is a maximum gap; combinedFloor excludes two small peaks in a long tail. */
-export function contested(options: { readonly margin?: number; readonly combinedFloor?: number } = {}): Predicate {
-  const margin = requireProbability(options.margin ?? defaultThresholds.contested.margin, 'margin');
-  const combined = requireProbability(options.combinedFloor ?? defaultThresholds.contested.combinedFloor, 'combinedFloor');
-  return data => data.runnerUp !== null && atLeast(margin, data.margin)
-    && atLeast(data.metrics.topTwoProbability, combined);
+/** gap bounds the first-to-second difference; combinedFloor bounds their combined probability. */
+export function split(options: { readonly gap?: number; readonly combinedFloor?: number } = {}): Predicate {
+  const gap = requireProbability(options.gap ?? defaultThresholds.split.gap, 'gap');
+  const combined = requireProbability(options.combinedFloor ?? defaultThresholds.split.combinedFloor, 'combinedFloor');
+  return data => data.second !== null && atLeast(gap, data.gap)
+    && atLeast(data.metrics.firstTwoProbability, combined);
 }
 
 export function clustered(options: {
@@ -44,8 +44,8 @@ export function clustered(options: {
   const ratio = requireProbability(options.ratio ?? defaultThresholds.clustered.ratio, 'ratio');
   if (ratio === 0) throw new TypeError('ratio must be greater than 0');
   return data => {
-    const items = data.ranked.filter(item => item.probability > 0
-      && atLeast(item.probability / data.topProbability, ratio));
+    const items = data.sorted.filter(item => item.probability > 0
+      && atLeast(item.probability / data.maximumProbability, ratio));
     return items.length >= count && atLeast(items.reduce((total, item) => total + item.probability, 0), combined);
   };
 }
@@ -54,21 +54,21 @@ export function flat(options: { readonly minimumRatio?: number; readonly minimum
   const ratio = requireProbability(options.minimumRatio ?? defaultThresholds.flat.minimumRatio, 'minimumRatio');
   const count = requireCount(options.minimumCount ?? defaultThresholds.flat.minimumCount);
   return data => {
-    const positive = data.ranked.filter(item => item.probability > 0);
+    const positive = data.sorted.filter(item => item.probability > 0);
     const smallest = positive[positive.length - 1];
     return positive.length >= count && smallest !== undefined
-      && atLeast(smallest.probability / data.topProbability, ratio);
+      && atLeast(smallest.probability / data.maximumProbability, ratio);
   };
 }
 
-export function topProbabilityAtLeast(floor: number): Predicate {
+export function maximumProbabilityAtLeast(floor: number): Predicate {
   requireProbability(floor, 'floor');
-  return data => atLeast(data.topProbability, floor);
+  return data => atLeast(data.maximumProbability, floor);
 }
 
-export function marginAtLeast(margin: number): Predicate {
-  requireProbability(margin, 'margin');
-  return data => atLeast(data.margin, margin);
+export function gapAtLeast(gap: number): Predicate {
+  requireProbability(gap, 'gap');
+  return data => atLeast(data.gap, gap);
 }
 
 export function allOf(...predicates: readonly Predicate[]): Predicate {

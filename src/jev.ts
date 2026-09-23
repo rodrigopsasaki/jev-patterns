@@ -1,5 +1,5 @@
-import { analyze } from './decision.ts';
-import type { Decision, OptionKeys, Options } from './model.ts';
+import { analyze } from './analysis.ts';
+import type { Distribution, OptionKeys, Options } from './model.ts';
 
 export interface JevChoiceAnswer {
   readonly type: 'choice';
@@ -26,7 +26,7 @@ export interface JevResponse<Answers extends Readonly<Record<string, JevAnswer>>
   readonly answers: Answers;
 }
 
-export type ChoiceAnswer<Option extends string = string> = Decision<Option> & {
+export type ChoiceAnswer<Option extends string = string> = Distribution<Option> & {
   readonly type: 'choice';
   /** The provider's original choice, including its tie-breaking choice. */
   readonly choice: Option;
@@ -38,7 +38,7 @@ export interface NoulAnswer {
   readonly type: 'noul';
   readonly yes: number;
   readonly no: number;
-  readonly distribution: Decision<'yes' | 'no'>;
+  readonly distribution: Distribution<'yes' | 'no'>;
   readonly raw: Readonly<Record<string, unknown>>;
 }
 
@@ -49,7 +49,7 @@ export interface ScoreAnswer<Level extends string = string> {
   readonly legend: Readonly<Record<Level, string>>;
   readonly expectedLevel: number;
   readonly scoreDifference: number;
-  readonly distribution: Decision<Level>;
+  readonly distribution: Distribution<Level>;
   readonly raw: Readonly<Record<string, unknown>>;
 }
 
@@ -117,7 +117,7 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
   const distribution = analyze(answer.probabilities, options);
   if (answer.type === 'choice') {
     const choice = text(answer.choice, 'choice');
-    if (!distribution.leaders.some(item => item.option === choice)) {
+    if (!distribution.maxima.some(item => item.option === choice)) {
       throw new TypeError('choice must be a highest-probability option');
     }
     const provider = { type: 'choice' as const, choice, confidence, raw };
@@ -131,15 +131,15 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
     if (!Object.hasOwn(legendInput, key)) throw new TypeError('legend keys must be consecutive from 0');
     return [key, text(legendInput[key], `legend[${key}]`)];
   }));
-  if (distribution.ranked.length !== levelCount
-    || distribution.ranked.some(item => !Object.hasOwn(legend, item.option))) {
+  if (distribution.sorted.length !== levelCount
+    || distribution.sorted.some(item => !Object.hasOwn(legend, item.option))) {
     throw new TypeError('probabilities must contain every legend level and no extra keys');
   }
   const score = answer.score;
   if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > levelCount - 1) {
     throw new TypeError('score must lie within the level range');
   }
-  const expectedLevel = distribution.ranked.reduce((total, item) => total + Number(item.option) * item.probability, 0);
+  const expectedLevel = distribution.sorted.reduce((total, item) => total + Number(item.option) * item.probability, 0);
   return { type: 'score', score, confidence, legend, distribution,
     expectedLevel, scoreDifference: score - expectedLevel, raw };
 }

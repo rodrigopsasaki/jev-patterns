@@ -1,26 +1,26 @@
-import { allOf, analyze, dominant, marginAtLeast, parse } from '../src/index.ts';
+import { allOf, analyze, dominant, gapAtLeast, parse } from '../src/index.ts';
 
 const ownership = analyze({ platform: 0.48, product: 0.44, infrastructure: 0.05, other: 0.03 });
 
 // The application owns both the domain vocabulary and the actions.
 const state = ownership.match({
-  dominant: d => ({ kind: 'clear-owner', owner: d.leader.option }) as const,
-  'runner-up': d => ({ kind: 'secondary-owner', primary: d.leader.option,
-    secondary: d.runnerUp.option }) as const,
-  contested: d => ({ kind: 'ownership-conflict', candidates: d.frontRunners }) as const,
-  clustered: d => ({ kind: 'cross-functional', candidates: d.contenders.items }) as const,
+  dominant: d => ({ kind: 'clear-owner', owner: d.uniqueMaximum.option }) as const,
+  'paired': d => ({ kind: 'secondary-owner', primary: d.uniqueMaximum.option,
+    secondary: d.second.option }) as const,
+  split: d => ({ kind: 'ownership-conflict', outcomes: d.pair }) as const,
+  clustered: d => ({ kind: 'cross-functional', outcomes: d.prominent.items }) as const,
   flat: () => ({ kind: 'no-clear-owner' }) as const,
   mixed: () => ({ kind: 'unclassified-ownership' }) as const,
 });
 
 if (state.kind === 'ownership-conflict') {
-  // Inferred: readonly [Candidate<"platform" | "product" | "infrastructure" | "other">, Candidate<...>]
-  console.log('Compare:', state.candidates.map(candidate => candidate.option));
+  // Inferred: readonly [Outcome<"platform" | "product" | "infrastructure" | "other">, Outcome<...>]
+  console.log('Compare:', state.outcomes.map(outcome => outcome.option));
 }
 
 // Predicates are ordinary functions; customization doesn't relabel the distribution.
-const strongLead = allOf(dominant({ floor: 0.9 }), marginAtLeast(0.3));
-console.log({ shape: ownership.shape, strongLead: ownership.is(strongLead) });
+const concentrated = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
+console.log({ shape: ownership.shape, concentrated: ownership.is(concentrated) });
 
 // Same API through the Jev adapter. A typed response retains ids and answer kinds.
 const response = parse({

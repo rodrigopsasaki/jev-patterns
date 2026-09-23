@@ -9,7 +9,7 @@
   "exports": "./src/index.ts",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "demo": "node examples/ownership.ts",
+    "demo": "node examples/shapes.ts",
     "demo:distributions": "node examples/distributions.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json"
   },
