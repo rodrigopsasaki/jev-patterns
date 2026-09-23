@@ -8,7 +8,9 @@
     "exactOptionalPropertyTypes": true,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
-    "noEmit": true
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsc/project.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "test/*.test.ts", "examples/**/*.ts"]
 }

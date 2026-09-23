@@ -8,7 +8,9 @@ This library describes probability distributions. Keep the distinction between a
 - Use synthetic Jev responses. Tests must run without credentials, live services, network calls or unseeded randomness. Generated tests must identify the seed and failing input.
 - Test invariants independently of the implementation: conservation, ordering, ties, permutation invariance, zero padding and return-value identity. Do not derive the expected answer by calling the code under test.
 - Public TypeScript changes require positive and negative consumer checks. Preserve literal keys, exhaustiveness, readonly types and missing-answer checks.
-- Run `npm run check`. It checks source types, coverage, the compiled package, the entire public runtime suite against the installed archive, and its declarations in real consumers.
+- During iteration run `npm run check` (changed worktree) or `npm run check -- --since origin/main` (branch plus worktree). Inspect scope with `npm run check:plan`. The planner selects Biome, affected Vitest tests, relevant type checks and installed-package smoke checks.
+- Run `npm run check:full` for release verification, broad changes and the final integration of a tooling migration. It includes full coverage and the complete installed-package replay. Do not run the full suite after every small edit unless a failure or unresolved concern warrants it.
+- Keep affected selection conservative and tested. Missing Git references fail; deleted dependencies and configuration changes promote to full checks. Never turn an unexplained empty runtime selection into success.
 - Do not reduce a coverage gate or remove a failing assertion to pass a change. Explain unreachable paths and repair the design or the test when appropriate.
 
 ## Compatibility

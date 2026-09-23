@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "noUncheckedIndexedAccess": false
+    "noUncheckedIndexedAccess": false,
+    "tsBuildInfoFile": "./node_modules/.cache/tsc/consumer.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "test/*.test.ts"]
 }

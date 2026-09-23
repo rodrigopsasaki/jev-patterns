@@ -4,7 +4,7 @@ What observable behavior changes? Include a synthetic distribution or Jev respon
 
 ## Evidence
 
-Which regression, boundary, property or type-contract tests prove it? Run `npm run check`.
+Which regression, boundary, property or type-contract tests prove it? Run `npm run check -- --since origin/main` and include the selected scope. Use `npm run check:full` when the plan requires it or broader verification is warranted.
 
 ## Compatibility
 

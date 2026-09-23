@@ -1,15 +1,11 @@
-export type DistributionShape =
-  | 'dominant'
-  | 'paired'
-  | 'split'
-  | 'clustered'
-  | 'flat'
-  | 'mixed';
+export type DistributionShape = 'dominant' | 'paired' | 'split' | 'clustered' | 'flat' | 'mixed';
 
 export type OptionKeys<Input> = Input extends unknown
-  ? [keyof Input] extends [never] ? string
-    : number extends keyof Input ? string
-    : `${Extract<keyof Input, string | number>}`
+  ? [keyof Input] extends [never]
+    ? string
+    : number extends keyof Input
+      ? string
+      : `${Extract<keyof Input, string | number>}`
   : never;
 
 export interface Outcome<Option extends string = string> {
@@ -65,7 +61,11 @@ export interface ShapeThresholds {
   readonly dominant: { readonly floor: number; readonly gap: number };
   readonly paired: { readonly floor: number; readonly secondFloor: number; readonly gap: number };
   readonly split: { readonly gap: number; readonly combinedFloor: number };
-  readonly clustered: { readonly minimumCount: number; readonly combinedFloor: number; readonly ratio: number };
+  readonly clustered: {
+    readonly minimumCount: number;
+    readonly combinedFloor: number;
+    readonly ratio: number;
+  };
   readonly flat: { readonly minimumRatio: number; readonly minimumCount: number };
 }
 
@@ -84,10 +84,17 @@ export interface Profile {
 
 export type ShapeDetails<Option extends string> =
   | { readonly shape: 'dominant'; readonly uniqueMaximum: Outcome<Option> }
-  | { readonly shape: 'paired'; readonly uniqueMaximum: Outcome<Option>; readonly second: Outcome<Option>;
-      readonly pair: readonly [Outcome<Option>, Outcome<Option>] }
-  | { readonly shape: 'split'; readonly second: Outcome<Option>;
-      readonly pair: readonly [Outcome<Option>, Outcome<Option>] }
+  | {
+      readonly shape: 'paired';
+      readonly uniqueMaximum: Outcome<Option>;
+      readonly second: Outcome<Option>;
+      readonly pair: readonly [Outcome<Option>, Outcome<Option>];
+    }
+  | {
+      readonly shape: 'split';
+      readonly second: Outcome<Option>;
+      readonly pair: readonly [Outcome<Option>, Outcome<Option>];
+    }
   | { readonly shape: 'clustered' }
   | { readonly shape: 'flat' }
   | { readonly shape: 'mixed' };
@@ -96,12 +103,13 @@ export type MatchHandlers<Option extends string = string> = {
   readonly [Shape in DistributionShape]: (distribution: DistributionFor<Shape, Option>) => unknown;
 };
 
-export type DistributionFor<Shape extends DistributionShape, Option extends string = string> =
-  Extract<Distribution<Option>, { readonly shape: Shape }>;
+export type DistributionFor<
+  Shape extends DistributionShape,
+  Option extends string = string,
+> = Extract<Distribution<Option>, { readonly shape: Shape }>;
 
-export type Distribution<Option extends string = string> = DistributionData<Option>
-  & ShapeDetails<Option>
-  & {
+export type Distribution<Option extends string = string> = DistributionData<Option> &
+  ShapeDetails<Option> & {
     readonly profile: Profile;
     readonly summary: string;
     /** Structural tests can overlap and do not change the assigned shape. */

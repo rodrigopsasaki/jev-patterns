@@ -8,7 +8,10 @@ export interface JevChoiceAnswer {
   readonly probabilities: Readonly<Record<string, number>>;
 }
 
-export interface JevNoulAnswer { readonly type: 'noul'; readonly noul: number }
+export interface JevNoulAnswer {
+  readonly type: 'noul';
+  readonly noul: number;
+}
 
 export interface JevScoreAnswer {
   readonly type: 'score';
@@ -55,17 +58,21 @@ export interface ScoreAnswer<Level extends string = string> {
 
 export type ParsedAnswer = ChoiceAnswer | NoulAnswer | ScoreAnswer;
 
-type ParsedAnswerFor<Answer extends JevAnswer> =
-  Answer extends JevChoiceAnswer ? ChoiceAnswer<OptionKeys<Answer['probabilities']>>
-  : Answer extends JevNoulAnswer ? NoulAnswer
-  : Answer extends JevScoreAnswer ? ScoreAnswer<OptionKeys<Answer['probabilities']>>
-  : never;
+type ParsedAnswerFor<Answer extends JevAnswer> = Answer extends JevChoiceAnswer
+  ? ChoiceAnswer<OptionKeys<Answer['probabilities']>>
+  : Answer extends JevNoulAnswer
+    ? NoulAnswer
+    : Answer extends JevScoreAnswer
+      ? ScoreAnswer<OptionKeys<Answer['probabilities']>>
+      : never;
 
 type ParsedAnswers<Answers extends Readonly<Record<string, JevAnswer>>> = {
-  readonly [Key in keyof Answers as Key extends string | number ? `${Key}` : never]:
-    {} extends Pick<Answers, Key>
-      ? ParsedAnswerFor<Answers[Key]> | undefined
-      : ParsedAnswerFor<Answers[Key]>;
+  readonly [Key in keyof Answers as Key extends string | number ? `${Key}` : never]: Record<
+    never,
+    never
+  > extends Pick<Answers, Key>
+    ? ParsedAnswerFor<Answers[Key]> | undefined
+    : ParsedAnswerFor<Answers[Key]>;
 };
 
 export interface ParsedResponse<Answers = Readonly<Record<string, ParsedAnswer | undefined>>> {
@@ -77,7 +84,8 @@ export interface ParsedResponse<Answers = Readonly<Record<string, ParsedAnswer |
 
 /** Parse decoded Jev JSON. Await the SDK or HTTP call before calling this function. */
 export function parse<const Answers extends Readonly<Record<string, JevAnswer>>>(
-  input: JevResponse<Answers>, options?: Options,
+  input: JevResponse<Answers>,
+  options?: Options,
 ): ParsedResponse<ParsedAnswers<Answers>>;
 export function parse(input: unknown, options?: Options): ParsedResponse;
 export function parse(input: unknown, options: Options = {}): ParsedResponse {
@@ -88,15 +96,21 @@ export function parse(input: unknown, options: Options = {}): ParsedResponse {
   const outputTokens = tokenCount(usage.output_tokens, 'usage.output_tokens');
   const answers = object(response.answers, 'answers');
   if (Object.keys(answers).length === 0) throw new TypeError('answers must be nonempty');
-  const parsedAnswers: Record<string, ParsedAnswer> = Object.fromEntries(Object.entries(answers).map(([id, answer]) => {
-    try { return [id, parseAnswer(answer, options)]; }
-    catch (error) {
-      throw new TypeError(`answers[${JSON.stringify(id)}]: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }));
+  const parsedAnswers: Record<string, ParsedAnswer> = Object.fromEntries(
+    Object.entries(answers).map(([id, answer]) => {
+      try {
+        return [id, parseAnswer(answer, options)];
+      } catch (error) {
+        throw new TypeError(
+          `answers[${JSON.stringify(id)}]: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }),
+  );
   Object.setPrototypeOf(parsedAnswers, null);
   return {
-    model, usage: { input_tokens: inputTokens, output_tokens: outputTokens },
+    model,
+    usage: { input_tokens: inputTokens, output_tokens: outputTokens },
     answers: parsedAnswers,
     raw: structuredClone(response),
   };
@@ -107,8 +121,13 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
   const raw = structuredClone(answer);
   if (answer.type === 'noul') {
     const yes = probability(answer.noul, 'noul');
-    return { type: 'noul', yes, no: 1 - yes,
-      distribution: analyze({ yes, no: 1 - yes }, options), raw };
+    return {
+      type: 'noul',
+      yes,
+      no: 1 - yes,
+      distribution: analyze({ yes, no: 1 - yes }, options),
+      raw,
+    };
   }
   if (answer.type !== 'choice' && answer.type !== 'score') {
     throw new TypeError('type must be choice, score or noul');
@@ -117,7 +136,7 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
   const distribution = analyze(answer.probabilities, options);
   if (answer.type === 'choice') {
     const choice = text(answer.choice, 'choice');
-    if (!distribution.maxima.some(item => item.option === choice)) {
+    if (!distribution.maxima.some((item) => item.option === choice)) {
       throw new TypeError('choice must be a highest-probability option');
     }
     const provider = { type: 'choice' as const, choice, confidence, raw };
@@ -126,27 +145,47 @@ function parseAnswer(input: unknown, options: Options): ParsedAnswer {
   const legendInput = object(answer.legend, 'legend');
   const levelCount = Object.keys(legendInput).length;
   if (levelCount < 2 || levelCount > 10) throw new TypeError('score must have 2–10 levels');
-  const legend = Object.fromEntries(Array.from({ length: levelCount }, (_, index) => {
-    const key = String(index);
-    if (!Object.hasOwn(legendInput, key)) throw new TypeError('legend keys must be consecutive from 0');
-    return [key, text(legendInput[key], `legend[${key}]`)];
-  }));
-  if (distribution.sorted.length !== levelCount
-    || distribution.sorted.some(item => !Object.hasOwn(legend, item.option))) {
+  const legend = Object.fromEntries(
+    Array.from({ length: levelCount }, (_, index) => {
+      const key = String(index);
+      if (!Object.hasOwn(legendInput, key))
+        throw new TypeError('legend keys must be consecutive from 0');
+      return [key, text(legendInput[key], `legend[${key}]`)];
+    }),
+  );
+  if (
+    distribution.sorted.length !== levelCount ||
+    distribution.sorted.some((item) => !Object.hasOwn(legend, item.option))
+  ) {
     throw new TypeError('probabilities must contain every legend level and no extra keys');
   }
   const score = answer.score;
   if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > levelCount - 1) {
     throw new TypeError('score must lie within the level range');
   }
-  const expectedLevel = distribution.sorted.reduce((total, item) => total + Number(item.option) * item.probability, 0);
-  return { type: 'score', score, confidence, legend, distribution,
-    expectedLevel, scoreDifference: score - expectedLevel, raw };
+  const expectedLevel = distribution.sorted.reduce(
+    (total, item) => total + Number(item.option) * item.probability,
+    0,
+  );
+  return {
+    type: 'score',
+    score,
+    confidence,
+    legend,
+    distribution,
+    expectedLevel,
+    scoreDifference: score - expectedLevel,
+    raw,
+  };
 }
 
 function object(value: unknown, name: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)
-    || (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value) ||
+    (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
+  ) {
     throw new TypeError(`${name} must be a decoded JSON object`);
   }
   return Object.fromEntries(Object.entries(value));

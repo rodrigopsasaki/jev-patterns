@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add pinned Biome and Vitest, shared Git-aware affected checks, a readable dry-run plan, incremental typecheck caches, and conditional PR/full CI paths. Package smoke runs separately from full replay.
+- Narrow unit imports so parser edits select parser suites. Consolidate nonempty validation and use a branch-free key comparator; retain all numerical cutoffs and result identity contracts.
 - Describe Jev Choice, Noul and Score responses with preserved provider values and raw snapshots.
 - Expose distribution data, structural predicates, exhaustive typed matching and the provisional `descriptive-v2` vocabulary.
 - Build an ESM package with TypeScript declarations and verify its actual installed archive.

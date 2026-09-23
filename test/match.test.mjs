@@ -1,25 +1,42 @@
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { test } from 'vitest';
+import { analyze } from '../src/analysis.ts';
 import {
-  allOf, analyze, anyOf, clustered, split, dominant, flat, gapAtLeast,
-  not, parse, paired, maximumProbabilityAtLeast,
-} from '../src/index.ts';
+  allOf,
+  anyOf,
+  clustered,
+  dominant,
+  flat,
+  gapAtLeast,
+  maximumProbabilityAtLeast,
+  not,
+  paired,
+  split,
+} from '../src/predicates.ts';
 
-const fromPercent = values => analyze(Object.fromEntries(values.map((p, i) => [String(i), p / 100])));
-const handlers = operation => ({
-  dominant: operation, 'paired': operation, split: operation,
-  clustered: operation, flat: operation, mixed: operation,
+const fromPercent = (values) =>
+  analyze(Object.fromEntries(values.map((p, i) => [String(i), p / 100])));
+const handlers = (operation) => ({
+  dominant: operation,
+  paired: operation,
+  split: operation,
+  clustered: operation,
+  flat: operation,
+  mixed: operation,
 });
 
 test('the five illustrative shapes and the explicit remainder are reachable', () => {
   for (const [values, shape] of [
-    [[91, 5, 3, 1], 'dominant'], [[64, 25, 7, 4], 'paired'],
-    [[51, 45, 3, 1], 'split'], [[41, 34, 22, 3], 'clustered'],
-    [[28, 26, 24, 22], 'flat'], [[60, 10, 10, 10, 10], 'mixed'],
+    [[91, 5, 3, 1], 'dominant'],
+    [[64, 25, 7, 4], 'paired'],
+    [[51, 45, 3, 1], 'split'],
+    [[41, 34, 22, 3], 'clustered'],
+    [[28, 26, 24, 22], 'flat'],
+    [[60, 10, 10, 10, 10], 'mixed'],
   ]) {
     const result = fromPercent(values);
     assert.equal(result.shape, shape);
-    assert.equal(result.match(handlers(d => d.shape)), shape);
+    assert.equal(result.match(handlers((d) => d.shape)), shape);
   }
 });
 
@@ -38,13 +55,18 @@ test('match invokes exactly one callback, preserves its value and passes the dis
   const result = fromPercent([48, 44, 5, 3]);
   const expected = { next: 'request-context' };
   let count = 0;
-  const onUnexpected = () => { throw new Error('Wrong handler'); };
-  const actual = result.match({ ...handlers(onUnexpected), split: d => {
-    count++;
-    assert.equal(d, result);
-    assert.equal(d.pair[1], d.second);
-    return expected;
-  } });
+  const onUnexpected = () => {
+    throw new Error('Wrong handler');
+  };
+  const actual = result.match({
+    ...handlers(onUnexpected),
+    split: (d) => {
+      count++;
+      assert.equal(d, result);
+      assert.equal(d.pair[1], d.second);
+      return expected;
+    },
+  });
   assert.equal(actual, expected);
   assert.equal(count, 1);
 });
@@ -55,7 +77,15 @@ test('match preserves promises and exceptions without inventing fallback actions
   assert.equal(result.match(handlers(() => promise)), promise);
   assert.equal(await result.match(handlers(() => promise)), 'app-chose-this');
   const failure = new Error('application error');
-  assert.throws(() => result.match(handlers(() => { throw failure; })), error => error === failure);
+  assert.throws(
+    () =>
+      result.match(
+        handlers(() => {
+          throw failure;
+        }),
+      ),
+    (error) => error === failure,
+  );
 });
 
 test('JavaScript callers also receive a clear error for incomplete or inherited handlers', () => {
@@ -82,7 +112,9 @@ test('structural predicates compose and short-circuit', () => {
   assert.equal(result.is(anyOf(dominant(), split())), true);
   assert.equal(result.is(maximumProbabilityAtLeast(0.5)), false);
   assert.equal(result.is(gapAtLeast(0.1)), false);
-  const never = () => { throw new Error('Must short circuit'); };
+  const never = () => {
+    throw new Error('Must short circuit');
+  };
   assert.equal(result.is(allOf(() => false, never)), false);
   assert.equal(result.is(anyOf(() => true, never)), true);
   assert.equal(result.is(allOf()), true);
@@ -94,7 +126,7 @@ test('ties and point masses retain honest structural facts', () => {
   assert.equal(tied.shape, 'split');
   assert.equal(tied.uniqueMaximum, null);
   assert.equal(tied.is(dominant({ floor: 0, gap: 0 })), false);
-  tied.match({ ...handlers(() => {}), split: d => assert.equal(d.pair.length, 2) });
+  tied.match({ ...handlers(() => {}), split: (d) => assert.equal(d.pair.length, 2) });
   const point = analyze({ only: 1 });
   assert.equal(point.shape, 'dominant');
   assert.equal(point.second, null);
@@ -111,18 +143,4 @@ test('threshold options reject malformed values at predicate construction', () =
   }
   assert.throws(() => clustered({ minimumCount: 1.5 }), TypeError);
   assert.throws(() => clustered({ ratio: 0 }), TypeError);
-});
-
-test('domain naming is an ordinary match result; choice parsing exposes the same interface', () => {
-  const response = parse({ model: 'synthetic', usage: { input_tokens: 0, output_tokens: 0 },
-    answers: { ownership: { type: 'choice', choice: 'platform', confidence: 0.2,
-      probabilities: { platform: 0.41, product: 0.34, infra: 0.22, other: 0.03 } } } });
-  assert.equal(response.answers.ownership.match({
-    dominant: () => 'clear-owner', 'paired': () => 'secondary-owner',
-    split: () => 'ownership-conflict', clustered: () => 'cross-functional',
-    flat: () => 'no-clear-owner', mixed: () => 'unclassified-ownership',
-  }), 'cross-functional');
-  assert.equal(response.answers.ownership.choice, 'platform');
-  assert.equal(response.answers.ownership.is(clustered()), true);
-  assert.equal(response.answers.ownership.match(handlers(d => d)), response.answers.ownership);
 });

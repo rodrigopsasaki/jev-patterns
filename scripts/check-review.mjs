@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 const name = process.argv[2];
 assert(['statistics', 'api'].includes(name));

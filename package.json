@@ -5,24 +5,46 @@
   "description": "Human-readable interpretations of Jev probability distributions",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=24.14" },
+  "engines": {
+    "node": ">=24.14"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
   "scripts": {
-    "test": "node --test test/*.test.mjs",
-    "test:coverage": "node --test --experimental-test-coverage \"--test-coverage-include=src/**\" --test-coverage-lines=100 --test-coverage-functions=100 --test-coverage-branches=99 test/*.test.mjs",
-    "test:package": "npm run build && node --test test/package/consumer.mjs",
+    "test": "vitest run",
+    "test:changed": "vitest run --changed",
+    "test:watch": "vitest --changed",
+    "test:coverage": "vitest run --coverage",
+    "test:package": "node scripts/test-package.mjs",
+    "test:package:smoke": "node scripts/test-package.mjs --smoke",
+    "lint": "biome ci --error-on-warnings .",
+    "format": "biome check --write .",
     "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
     "prepack": "npm run build",
-    "check": "npm run typecheck && npm run test:coverage && npm run test:package",
+    "check": "node scripts/check.mjs --changed",
+    "check:affected": "node scripts/check.mjs --affected",
+    "check:full": "node scripts/check.mjs --full",
+    "check:plan": "node scripts/check.mjs --changed --plan",
     "demo": "node examples/shapes.ts",
     "demo:distributions": "node examples/distributions.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json"
   },
-  "devDependencies": { "typescript": "5.9.3" }
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "@vitest/coverage-v8": "5.0.1",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
 }

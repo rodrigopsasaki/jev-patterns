@@ -6,8 +6,11 @@ export const numericTolerances = Object.freeze({
 });
 
 export function atLeast(actual: number, threshold: number): boolean {
-  return actual >= threshold || threshold - actual <= numericTolerances.thresholdRelative
-    * Math.max(Math.abs(actual), Math.abs(threshold));
+  return (
+    actual >= threshold ||
+    threshold - actual <=
+      numericTolerances.thresholdRelative * Math.max(Math.abs(actual), Math.abs(threshold))
+  );
 }
 
 export function requireProbability(value: number, name: string): number {

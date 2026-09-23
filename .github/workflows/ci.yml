@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -13,8 +15,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Node ${{ matrix.node }} / ${{ matrix.os }}
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+      work: ${{ steps.scope.outputs.work }}
+      base: ${{ steps.scope.outputs.base }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          if [ "$EVENT_NAME" = 'pull_request' ]; then
+            node scripts/check.mjs --plan --since "$BASE_SHA" > "$RUNNER_TEMP/check-plan.json"
+          else
+            node scripts/check.mjs --plan --full > "$RUNNER_TEMP/check-plan.json"
+          fi
+          node --input-type=module <<'JS'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          const plan = JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/check-plan.json`, 'utf8'));
+          appendFileSync(process.env.GITHUB_OUTPUT, `full=${plan.gates.full}\nwork=${plan.commands.length > 0}\nbase=${plan.base ?? ''}\n`);
+          console.log(JSON.stringify(plan, null, 2));
+          JS
+
+  affected:
+    needs: plan
+    if: needs.plan.outputs.full == 'false' && needs.plan.outputs.work == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check -- --since "$BASE_SHA"
+        env:
+          BASE_SHA: ${{ needs.plan.outputs.base }}
+      - run: git diff --exit-code
+
+  full:
+    needs: plan
+    if: needs.plan.outputs.full == 'true'
+    name: Full / Node ${{ matrix.node }} / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -35,5 +92,36 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm run check
+      - run: npm run check:full
       - run: git diff --exit-code
+
+  ci:
+    name: CI
+    if: always()
+    needs: [plan, affected, full]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require the selected checks to succeed
+        env:
+          PLAN_RESULT: ${{ needs.plan.result }}
+          FULL_REQUIRED: ${{ needs.plan.outputs.full }}
+          WORK_REQUIRED: ${{ needs.plan.outputs.work }}
+          AFFECTED_RESULT: ${{ needs.affected.result }}
+          FULL_RESULT: ${{ needs.full.result }}
+        run: |
+          test "$PLAN_RESULT" = success
+          case "$FULL_REQUIRED:$WORK_REQUIRED" in
+            true:true|false:true|false:false) ;;
+            *) exit 1 ;;
+          esac
+          if [ "$FULL_REQUIRED" = true ]; then
+            test "$FULL_RESULT" = success
+            test "$AFFECTED_RESULT" = skipped
+          elif [ "$WORK_REQUIRED" = true ]; then
+            test "$AFFECTED_RESULT" = success
+            test "$FULL_RESULT" = skipped
+          else
+            test "$AFFECTED_RESULT" = skipped
+            test "$FULL_RESULT" = skipped
+          fi

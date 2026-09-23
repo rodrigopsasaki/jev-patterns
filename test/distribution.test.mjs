@@ -1,8 +1,10 @@
-import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyze, massSet } from '../src/index.ts';
+import { test } from 'vitest';
+import { analyze } from '../src/analysis.ts';
+import { massSet } from '../src/distribution.ts';
 
-const probabilities = weights => Object.fromEntries(weights.map((weight, i) => [String.fromCharCode(65 + i), weight / 100]));
+const probabilities = (weights) =>
+  Object.fromEntries(weights.map((weight, i) => [String.fromCharCode(65 + i), weight / 100]));
 
 for (const [weights, shape, count] of [
   [[97, 1, 1, 1], 'dominant', 1],
@@ -28,7 +30,9 @@ test('point mass has one effective option and no entropy', () => {
 
 test('uniform distributions have k effective options with no unique maximum', () => {
   for (const k of [2, 3, 4, 10, 100]) {
-    const result = analyze(Object.fromEntries(Array.from({ length: k }, (_, i) => [String(i), 1 / k])));
+    const result = analyze(
+      Object.fromEntries(Array.from({ length: k }, (_, i) => [String(i), 1 / k])),
+    );
     assert.ok(Math.abs(result.metrics.effectiveOptions.shannon - k) < 1e-10);
     assert.ok(Math.abs(result.metrics.effectiveOptions.simpson - k) < 1e-10);
     assert.equal(result.uniqueMaximum, null);
@@ -54,7 +58,10 @@ test('ties at the mass boundary are all included', () => {
 
 test('full mass keeps tiny positive tails and ordinary boundaries tolerate roundoff', () => {
   const full = massSet({ a: 1 - Number.EPSILON, b: Number.EPSILON / 2, c: Number.EPSILON / 2 }, 1);
-  assert.deepEqual(full.options.map(item => item.option), ['a', 'b', 'c']);
+  assert.deepEqual(
+    full.options.map((item) => item.option),
+    ['a', 'b', 'c'],
+  );
   const boundary = massSet({ a: 0.58, b: 0.22, c: 0.15, d: 0.05 }, 0.8);
   assert.equal(boundary.count, 2);
   assert.ok(Math.abs(boundary.mass - 0.8) < 1e-12);
@@ -89,7 +96,18 @@ test('custom shortlist does not silently redefine shape profile', () => {
 
 test('small floating point drift is reported; malformed mass is rejected', () => {
   assert.equal(analyze({ a: 0.7, b: 0.300000001 }).input.normalized, true);
-  for (const value of [{}, { a: 0 }, { a: 97, b: 3 }, { a: -0.1, b: 1.1 }, { a: NaN }, { a: Infinity }, { a: '1' }, { a: 0.99 }, [], null]) {
+  for (const value of [
+    {},
+    { a: 0 },
+    { a: 97, b: 3 },
+    { a: -0.1, b: 1.1 },
+    { a: NaN },
+    { a: Infinity },
+    { a: '1' },
+    { a: 0.99 },
+    [],
+    null,
+  ]) {
     assert.throws(() => analyze(value), TypeError);
   }
   for (const value of [0, -1, NaN, Infinity, 1.1]) {
@@ -100,9 +118,12 @@ test('small floating point drift is reported; malformed mass is rejected', () =>
 
 test('mass selection reaches the target and grows monotonically', () => {
   let seed = 9123;
-  function random() { seed = (1664525 * seed + 1013904223) >>> 0; return (seed + 1) / 4294967297; }
+  function random() {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    return (seed + 1) / 4294967297;
+  }
   for (let sample = 0; sample < 100; sample++) {
-    const weights = Array.from({ length: 2 + sample % 30 }, random);
+    const weights = Array.from({ length: 2 + (sample % 30) }, random);
     const total = weights.reduce((a, b) => a + b, 0);
     const input = Object.fromEntries(weights.map((v, i) => [String(i), v / total]));
     let previous = 0;

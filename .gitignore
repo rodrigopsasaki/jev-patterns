@@ -1,5 +1,6 @@
 node_modules/
 dist/
+coverage/
 *.tgz
 .interlock/local.yaml
 .interlock/journal/

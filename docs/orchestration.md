@@ -6,6 +6,8 @@ The initial launch could not reach an agent. Its brief commit hit a sandbox rest
 
 The 2026-09-23 test-hardening pass also used native sessions: separate Jev wire-contract, numerical-property/boundary, and TypeScript/matching tasks. The parent integrated two validation/dispatch fixes, added packaging and CI checks, and ran the complete gate on Node 24.14.0 and 26.9.0. A further independent package review caught source-only imports in the shipped README; installed-example tests now cover that regression. These are locally verified test results, not new Interlock receipts or remote CI results. The original approved graph was not changed or reused as approval for the later work.
 
+The later Biome/Vitest migration used the same native fallback for runtime-test migration, Git selection/CLI contracts and independent CI review. The parent integrated formatting, affected/full runners, installed-package smoke and conditional CI. Review identified quoted Git paths, clean-build cache isolation, CRLF README parsing and the need to run full verification when the package harness changes. The selected local checks are recorded in terminal output; no Interlock or hosted-CI receipts are claimed.
+
 ## Normal Interlock setup
 
 Use the installed Interlock CLI from a properly configured Herdr session. Copy `.interlock/local.example.yaml` to `.interlock/local.yaml`, choose an authenticated runtime, and use the graph approval and run commands. Local runtime configuration stays outside Git.

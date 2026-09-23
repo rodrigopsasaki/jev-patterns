@@ -2,6 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
+    "incremental": false,
+    "tsBuildInfoFile": null,
     "declaration": true,
     "rewriteRelativeImportExtensions": true,
     "rootDir": "src",

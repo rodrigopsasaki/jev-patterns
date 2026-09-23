@@ -14,7 +14,7 @@ The package ships ESM JavaScript and TypeScript declarations. The current suppor
 
 1. Settle the package name and repository owner, verify availability and add the actual repository metadata and reporting links.
 2. Review the vocabulary and semantics against representative synthetic distributions, documenting surprising boundaries and remaining ambiguities. Keep cutoffs explicitly provisional; an experimental release does not require pretending they are calibrated.
-3. Run `npm run check` from a clean checkout and obtain passing results from the configured remote CI matrix. Require CI and review before merging after the remote repository exists.
+3. Run `npm run check:full` from a clean checkout and obtain passing results from the configured remote CI matrix. Require the final `CI` status and review before merging after the remote repository exists. A clean `npm run check` intentionally has no affected work and is not release evidence.
 4. Review the exact tarball contents and declarations. Confirm license, package metadata, README installation examples, changelog and support policy.
 5. Remove `private: true` only in the release change, choose a version, tag the reviewed commit and publish the verified artifact. Use an explicit maintainer release; the CI workflow does not publish packages.
 

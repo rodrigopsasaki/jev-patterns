@@ -1,5 +1,11 @@
 import {
-  analyze, dominant, massSet, parse, type Distribution, type JevAnswer, type JevResponse,
+  analyze,
+  type Distribution,
+  dominant,
+  type JevAnswer,
+  type JevResponse,
+  massSet,
+  parse,
 } from '../src/index.ts';
 
 // Compile-time consumer contracts; runtime coverage lives beside this file.
@@ -15,29 +21,38 @@ export function publicTypes(input: unknown) {
   const numericKey: '0' | '1' = analyze({ 0: 0.6, 1: 0.4 }).first.option;
 
   const action = distribution.match({
-    dominant: d => {
+    dominant: (d) => {
       const name: typeof option = d.uniqueMaximum.option;
       const shape: 'dominant' = d.shape;
       return { kind: 'route', option: name, shape } as const;
     },
-    paired: d => ({ kind: 'inspect', option: d.pair[1].option }) as const,
-    split: d => {
-      const pair: readonly [{ readonly option: typeof option }, { readonly option: typeof option }] = d.pair;
+    paired: (d) => ({ kind: 'inspect', option: d.pair[1].option }) as const,
+    split: (d) => {
+      const pair: readonly [
+        { readonly option: typeof option },
+        { readonly option: typeof option },
+      ] = d.pair;
       // @ts-expect-error Split includes exact ties.
       d.uniqueMaximum.option;
       return { kind: 'compare', pair } as const;
     },
-    clustered: d => d.prominent.count,
+    clustered: (d) => d.prominent.count,
     flat: () => null,
-    mixed: async d => d.first.option,
+    mixed: async (d) => d.first.option,
   });
-  const output: { readonly kind: 'route' | 'inspect' | 'compare' }
-    | number | null | Promise<typeof option> = action;
+  const output:
+    | { readonly kind: 'route' | 'inspect' | 'compare' }
+    | number
+    | null
+    | Promise<typeof option> = action;
   // @ts-expect-error match() preserves the union of handler return types.
   const impossible: boolean = action;
   const partial = {
-    dominant: () => 'one', 'paired': () => 'two', split: () => 'close',
-    clustered: () => 'group', flat: () => 'even',
+    dominant: () => 'one',
+    paired: () => 'two',
+    split: () => 'close',
+    clustered: () => 'group',
+    flat: () => 'even',
   };
   // @ts-expect-error Exhaustive matching also requires mixed.
   distribution.match(partial);
@@ -53,13 +68,23 @@ export function publicTypes(input: unknown) {
   }
 
   const response = parse({
-    model: 'synthetic', usage: { input_tokens: 1, output_tokens: 1 },
+    model: 'synthetic',
+    usage: { input_tokens: 1, output_tokens: 1 },
     answers: {
-      route: { type: 'choice', choice: 'billing', confidence: 0.2,
-        probabilities: { billing: 0.48, support: 0.44, sales: 0.05, other: 0.03 } },
+      route: {
+        type: 'choice',
+        choice: 'billing',
+        confidence: 0.2,
+        probabilities: { billing: 0.48, support: 0.44, sales: 0.05, other: 0.03 },
+      },
       urgent: { type: 'noul', noul: 0.7 },
-      severity: { type: 'score', score: 0.4, confidence: 0.3,
-        probabilities: { 0: 0.6, 1: 0.4 }, legend: { 0: 'Low', 1: 'High' } },
+      severity: {
+        type: 'score',
+        score: 0.4,
+        confidence: 0.3,
+        probabilities: { 0: 0.6, 1: 0.4 },
+        legend: { 0: 'Low', 1: 'High' },
+      },
     },
   });
   const choice: typeof option = response.answers.route.choice;
@@ -70,8 +95,9 @@ export function publicTypes(input: unknown) {
   response.answers.missing;
   // @ts-expect-error Known answer kind is preserved.
   response.answers.urgent.choice;
+  const originalRoute = response.answers.route;
   // @ts-expect-error Answer dictionary is readonly.
-  response.answers.route = response.answers.route;
+  response.answers.route = originalRoute;
 
   const unknown = parse(input);
   // @ts-expect-error Unknown JSON requires a missing-id check.
@@ -109,7 +135,10 @@ export function uncommonRecords(
   void [option, neverOption];
 }
 
-interface ProbabilityMap { red: number; blue: number }
+interface ProbabilityMap {
+  red: number;
+  blue: number;
+}
 
 export function erasedKeys(erased: {}, numeric: Record<number, number>, named: ProbabilityMap) {
   // @ts-expect-error Erased keys cannot promise the impossible never type.
