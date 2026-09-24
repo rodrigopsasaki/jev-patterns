@@ -10,6 +10,8 @@ Before 1.0, breaking API changes require a minor-version increment; compatible f
 
 The package ships ESM JavaScript and TypeScript declarations. The current support floor is Node 24.14 and TypeScript 5.9.3. CommonJS-specific builds, older engines and browser bundlers are not claimed as supported without dedicated runtime checks. Bundler-mode type resolution is tested separately.
 
+The TypeScript floor is CI-verified, not merely asserted: `typescript-floor` is a devDependency alias (`npm:typescript@5.9.3`) installed alongside the current `typescript` devDependency, and `test/package/consumer.mjs`'s declaration checks (run by `test:package`, part of `check:full`) type-check the packed declarations under *both* compilers, across NodeNext/Bundler module resolution and both `noUncheckedIndexedAccess` settings — four combinations per compiler, eight total. A floor bump or a declaration change the floor compiler rejects fails this gate directly, rather than only being caught by a maintainer reading the claim against the shipped `.d.ts` files by hand.
+
 ## Changesets
 
 Every pull request that changes public behavior adds a changeset (`npm run changeset`) describing the change and its semver bump, in the same terms as the compatibility contract above — a breaking pre-1.0 change is `minor`, a compatible fix is `patch`. Changesets accumulate on `main` as individual files under `.changeset/`; nothing about the package version changes until they are released.

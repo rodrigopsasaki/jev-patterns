@@ -49,6 +49,7 @@
     "@changesets/cli": "^3.0.3",
     "@vitest/coverage-v8": "5.0.1",
     "typescript": "7.0.2",
+    "typescript-floor": "npm:typescript@5.9.3",
     "vitest": "5.0.1"
   },
   "repository": {

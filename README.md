@@ -257,7 +257,7 @@ This is a V2 design direction, not an available v0 API. The key boundary is a pu
 
 ## Install
 
-Node 24.14+ and TypeScript 5.9.3+ are the current support floor. Install the compiled package from [npm](https://www.npmjs.com/package/jev-patterns):
+Node 24.14+ and TypeScript 5.9.3+ are the current support floor. `test:package` type-checks the shipped declarations under both TypeScript 5.9.3 (the floor, aliased as the `typescript-floor` devDependency) and the current `typescript` devDependency, across NodeNext/Bundler resolution and both `noUncheckedIndexedAccess` settings, so this claim is CI-verified rather than asserted in prose. Install the compiled package from [npm](https://www.npmjs.com/package/jev-patterns):
 
 ```sh
 npm install jev-patterns

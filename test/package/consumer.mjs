@@ -325,34 +325,44 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
     });
   }
 
-  for (const resolution of full ? ['NodeNext', 'Bundler'] : ['NodeNext']) {
-    for (const checkedIndex of full ? [true, false] : [true]) {
-      await t.test(
-        `${resolution} declarations with noUncheckedIndexedAccess=${checkedIndex}`,
-        async () => {
-          await writeFile(
-            join(consumer, 'tsconfig.json'),
-            JSON.stringify({
-              compilerOptions: {
-                target: 'ES2022',
-                module: resolution === 'NodeNext' ? 'NodeNext' : 'ESNext',
-                moduleResolution: resolution,
-                strict: true,
-                exactOptionalPropertyTypes: true,
-                noUncheckedIndexedAccess: checkedIndex,
-                noEmit: true,
-                skipLibCheck: false,
-              },
-              include: ['test/*.test.ts', 'test/readme-*.ts'],
-            }),
-          );
-          run(
-            process.execPath,
-            [resolve(root, 'node_modules/typescript/bin/tsc'), '--project', 'tsconfig.json'],
-            consumer,
-          );
-        },
-      );
+  // The declared support floor (docs/release-policy.md, README.md) is only
+  // real if CI actually type-checks the shipped declarations with that
+  // compiler, not just the one devDependency happens to install. Run every
+  // combination against both the current `typescript` and the aliased
+  // `typescript-floor` devDependency so a floor bump or a floor-incompatible
+  // declaration change surfaces here instead of only being asserted in prose.
+  const compilers = full
+    ? [
+        ['typescript', resolve(root, 'node_modules/typescript/bin/tsc')],
+        ['typescript-floor', resolve(root, 'node_modules/typescript-floor/bin/tsc')],
+      ]
+    : [['typescript', resolve(root, 'node_modules/typescript/bin/tsc')]];
+  for (const [compilerName, tscPath] of compilers) {
+    for (const resolution of full ? ['NodeNext', 'Bundler'] : ['NodeNext']) {
+      for (const checkedIndex of full ? [true, false] : [true]) {
+        await t.test(
+          `${resolution} declarations with noUncheckedIndexedAccess=${checkedIndex} under ${compilerName}`,
+          async () => {
+            await writeFile(
+              join(consumer, 'tsconfig.json'),
+              JSON.stringify({
+                compilerOptions: {
+                  target: 'ES2022',
+                  module: resolution === 'NodeNext' ? 'NodeNext' : 'ESNext',
+                  moduleResolution: resolution,
+                  strict: true,
+                  exactOptionalPropertyTypes: true,
+                  noUncheckedIndexedAccess: checkedIndex,
+                  noEmit: true,
+                  skipLibCheck: false,
+                },
+                include: ['test/*.test.ts', 'test/readme-*.ts'],
+              }),
+            );
+            run(process.execPath, [tscPath, '--project', 'tsconfig.json'], consumer);
+          },
+        );
+      }
     }
   }
 });
