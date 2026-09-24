@@ -1,6 +1,6 @@
 export { analyze } from './analysis.ts';
 export type { InspectedAnswer, InspectedChoice, InspectedScore } from './answers.ts';
-export { massSet } from './distribution.ts';
+export { massSet, rank } from './distribution.ts';
 export type {
   InspectableAnswer,
   InspectableChoice,
@@ -31,6 +31,7 @@ export type {
   Predicate,
   ProbabilityGroup,
   Profile,
+  RankOptions,
 } from './model.ts';
 export {
   allOf,

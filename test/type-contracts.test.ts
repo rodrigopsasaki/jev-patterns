@@ -5,8 +5,10 @@ import {
   type JevAnswer,
   type JevResponse,
   type NoulAnswer,
+  type Outcome,
   type ParsedAnswer,
   parse,
+  rank,
   type ScoreAnswer,
 } from '../src/index.ts';
 
@@ -34,6 +36,25 @@ export function exactDistributionContract() {
   distribution.profile.numericTolerances.tieAbsolute = 0;
   // @ts-expect-error The complete maximum set is readonly.
   distribution.maxima.push(distribution.first);
+}
+
+// rank()'s typed exclude narrows the result's option union at the type level; excluding a
+// literal outside the typed probability map is a compile error, not a silent no-op.
+export function exactRankContract() {
+  const probabilities = { billing: 0.51, refund: 0.45, other: 0.04 };
+  type Name = 'billing' | 'refund' | 'other';
+
+  const ranked = rank(probabilities, { exclude: ['other'] });
+  const excludedType: Assert<Equal<typeof ranked, readonly Outcome<Exclude<Name, 'other'>>[]>> =
+    true;
+  void excludedType;
+
+  const unranked = rank(probabilities);
+  const unrankedType: Assert<Equal<typeof unranked, readonly Outcome<Name>[]>> = true;
+  void unrankedType;
+
+  // @ts-expect-error Excluding a literal outside the typed probability map is a compile error.
+  rank(probabilities, { exclude: ['unknown'] });
 }
 
 function parseTyped<const Answers extends Readonly<Record<string, JevAnswer>>>(

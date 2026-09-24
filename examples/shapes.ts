@@ -1,4 +1,4 @@
-import { allOf, analyze, dominant, gapAtLeast } from '../src/index.ts';
+import { allOf, analyze, dominant, gapAtLeast, rank } from '../src/index.ts';
 
 const distribution = analyze({ a: 0.64, b: 0.25, c: 0.07, d: 0.04 });
 
@@ -15,3 +15,6 @@ console.log({
 console.log({
   concentrated: distribution.is(allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3))),
 });
+
+// Option names remain "a" | "b" | "c" | "d" throughout, including through rank().
+console.log(rank({ a: 0.64, b: 0.25, c: 0.07, d: 0.04 }, { exclude: ['d'], limit: 2 }));

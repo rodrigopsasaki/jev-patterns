@@ -1,4 +1,4 @@
-import { allOf, analyze, dominant, gapAtLeast, parse } from '../src/index.ts';
+import { allOf, analyze, dominant, gapAtLeast, parse, rank } from '../src/index.ts';
 
 const ownership = analyze({ platform: 0.48, product: 0.44, infrastructure: 0.05, other: 0.03 });
 
@@ -20,6 +20,13 @@ if (state.kind === 'ownership-conflict') {
 // Predicates are ordinary functions; customization doesn't relabel the distribution.
 const concentrated = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
 console.log({ concentrated: ownership.is(concentrated) });
+
+// Take the top owner excluding a catch-all label: rank(), not a second helper for "top-1".
+const topOwner = rank(
+  { platform: 0.48, product: 0.44, infrastructure: 0.05, other: 0.03 },
+  { exclude: ['other'], limit: 1 },
+)[0];
+console.log(topOwner);
 
 // Same API through the Jev adapter. A typed response retains ids and answer kinds.
 const response = parse({

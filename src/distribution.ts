@@ -1,4 +1,11 @@
-import type { DistributionData, MassSet, OptionKeys, Options, Outcome } from './model.ts';
+import type {
+  DistributionData,
+  MassSet,
+  OptionKeys,
+  Options,
+  Outcome,
+  RankOptions,
+} from './model.ts';
 import { atLeast, numericTolerances } from './numeric.ts';
 import { InputIssue } from './validation.ts';
 
@@ -57,6 +64,46 @@ export function massSet(input: unknown, targetMass: number): MassSet;
 export function massSet(input: unknown, targetMass: number): MassSet {
   requireFraction(targetMass, 'targetMass');
   return selectMassSet(readProbabilities(input).sorted, targetMass);
+}
+
+/**
+ * The option vocabulary `rank()` can exclude against: a typed input's own option keys, or
+ * (for untyped/`unknown` input, which has no closed vocabulary to check against) `string`.
+ * A single generic signature — rather than a typed overload plus an `unknown` fallback —
+ * so that excluding a literal outside a typed input's option keys is a compile error at
+ * this call, not a silent, more-permissive match against a second overload.
+ */
+type RankOption<Input> = Input extends object ? OptionKeys<Input> : string;
+
+/**
+ * Rank options by probability, excluding some labels (e.g. an "other" catch-all or a
+ * none-sentinel) and optionally keeping only the top `limit`. Shares `analyze()`'s
+ * validation and tie-breaking order. Probabilities are not renormalized after exclusion:
+ * a returned entry keeps its original model probability, exclusion only filters which
+ * entries appear. There is no separate "top-1 excluding X" helper; that is
+ * `rank(p, { exclude, limit: 1 })[0]`.
+ */
+export function rank<
+  const Input,
+  const Excluded extends readonly RankOption<Input>[] = readonly [],
+>(
+  input: Input,
+  options?: { readonly exclude?: Excluded; readonly limit?: number },
+): readonly Outcome<Exclude<RankOption<Input>, Excluded[number]>>[];
+export function rank(input: unknown, options: RankOptions = {}): readonly Outcome[] {
+  const { exclude, limit } = options;
+  if (limit !== undefined) requireLimit(limit);
+  const { sorted } = readProbabilities(input);
+  if (exclude === undefined) return limit === undefined ? sorted : sorted.slice(0, limit);
+  const excluded = new Set(exclude);
+  const filtered = sorted.filter((item) => !excluded.has(item.option));
+  return limit === undefined ? filtered : filtered.slice(0, limit);
+}
+
+function requireLimit(value: number): void {
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new TypeError('limit must be a positive safe integer');
+  }
 }
 
 function selectMassSet(sorted: readonly Outcome[], targetMass: number): MassSet {

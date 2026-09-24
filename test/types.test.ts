@@ -6,6 +6,7 @@ import {
   type JevResponse,
   massSet,
   parse,
+  rank,
 } from '../src/index.ts';
 
 // Compile-time consumer contracts; runtime coverage lives beside this file.
@@ -24,6 +25,19 @@ export function publicTypes(input: unknown) {
   const stillOption: typeof option = distribution.is(dominant({ floor: 0.6 }))
     ? distribution.first.option
     : distribution.first.option;
+
+  const ranked = rank(
+    { billing: 0.48, support: 0.44, sales: 0.05, other: 0.03 },
+    { exclude: ['other'] },
+  );
+  const first = ranked[0];
+  let excludedOption: Exclude<typeof option, 'other'> | undefined;
+  if (first) {
+    excludedOption = first.option;
+    // @ts-expect-error Excluding a literal removes it from the ranked result's option type.
+    const impossible: 'other' = first.option;
+    void impossible;
+  }
 
   const response = parse({
     model: 'synthetic',
@@ -63,7 +77,18 @@ export function publicTypes(input: unknown) {
   const unknownOption: string = analyze(input).first.option;
   // @ts-expect-error Unknown input cannot acquire promised literal names.
   const fabricated: typeof option = analyze(input).first.option;
-  void [wrong, numericKey, stillOption, choice, type, yes, level, unknownOption, fabricated];
+  void [
+    wrong,
+    numericKey,
+    stillOption,
+    excludedOption,
+    choice,
+    type,
+    yes,
+    level,
+    unknownOption,
+    fabricated,
+  ];
 }
 
 export function broadRecords(response: JevResponse<Record<string, JevAnswer>>) {

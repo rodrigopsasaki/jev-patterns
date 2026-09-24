@@ -16,6 +16,11 @@ export interface Options {
   readonly targetMass?: number;
 }
 
+export interface RankOptions<Option extends string = string> {
+  readonly exclude?: readonly Option[];
+  readonly limit?: number;
+}
+
 export interface ProbabilityGroup<Option extends string = string> {
   readonly items: readonly Outcome<Option>[];
   readonly count: number;
