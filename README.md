@@ -247,7 +247,7 @@ Score levels are ordered. A categorical view by itself cannot distinguish probab
 
 The applied numerical tolerances are recorded under `.profile` (`descriptive-v3`). The structural predicates' own default thresholds (`dominant`'s floor, and so on) live next to each predicate factory in `src/predicates.ts`, not on `.profile`: with no classification decision left to version, they are the predicates' own opt-in parameters. Multi-label aggregation, calibration, and ordinal distance analysis remain outside the current API.
 
-Explore the [public types](src/model.ts), [design](docs/proposal.md), and [examples](examples/shapes.ts) in the repository. Development files are excluded from the package archive.
+Explore the [public types](src/model.ts), [design](docs/proposal.md), and [examples](examples/observations.ts) in the repository. Development files are excluded from the package archive.
 
 ## Looking ahead: task verbs
 
