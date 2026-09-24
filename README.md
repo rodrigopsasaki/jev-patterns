@@ -250,7 +250,7 @@ Node 24.14+ and TypeScript 5.9.3+ are the current support floor. Install the com
 npm install jev-patterns
 ```
 
-The [GitHub release](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.2.0) also provides a compiled tarball and checksum. The earlier v0.1.0 release was distributed through GitHub only.
+The earlier v0.1.0 release predated the npm package and was GitHub-only; npm is the distribution channel from v0.2.0 on.
 
 To work from source:
 

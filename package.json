@@ -39,10 +39,14 @@
     "check:plan": "node scripts/check.mjs --changed --plan",
     "demo": "node examples/shapes.ts",
     "demo:distributions": "node examples/distributions.mjs",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "npm run check:full && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
+    "@changesets/cli": "^3.0.3",
     "@vitest/coverage-v8": "5.0.1",
     "typescript": "5.9.3",
     "vitest": "5.0.1"
