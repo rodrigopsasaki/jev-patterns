@@ -1,12 +1,10 @@
 import {
   analyze,
   type ChoiceAnswer,
-  type DistributionFor,
+  type Distribution,
   type JevAnswer,
   type JevResponse,
-  type MatchHandlers,
   type NoulAnswer,
-  type Outcome,
   type ParsedAnswer,
   parse,
   type ScoreAnswer,
@@ -20,60 +18,11 @@ type Assert<Value extends true> = Value;
 
 // These functions are typechecked, never executed. Exact type comparisons catch
 // accidental unknown/any widening that assignment-only checks would miss.
-export function exactMatchContracts() {
+export function exactDistributionContract() {
   const distribution = analyze({ north: 0.64, south: 0.36 });
   type Name = 'north' | 'south';
-  const result = distribution.match({
-    dominant: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'dominant', Name>>> = true;
-      void narrowed;
-      return { kind: 'dominant', option: value.uniqueMaximum.option } as const;
-    },
-    paired: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'paired', Name>>> = true;
-      // @ts-expect-error The pair is a readonly tuple.
-      value.pair[0] = value.second;
-      void narrowed;
-      return Promise.resolve({ kind: 'paired', pair: value.pair } as const);
-    },
-    split: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'split', Name>>> = true;
-      // @ts-expect-error A pair always has exactly two entries.
-      value.pair[2];
-      void narrowed;
-      return 7 as const;
-    },
-    clustered: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'clustered', Name>>> = true;
-      // @ts-expect-error Clustered distributions do not promise a pair.
-      value.pair;
-      void narrowed;
-      return undefined;
-    },
-    flat: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'flat', Name>>> = true;
-      void narrowed;
-      return null;
-    },
-    mixed: (value) => {
-      const narrowed: Assert<Equal<typeof value, DistributionFor<'mixed', Name>>> = true;
-      void narrowed;
-      return false as const;
-    },
-  });
-  type Expected =
-    | { readonly kind: 'dominant'; readonly option: Name }
-    | Promise<{ readonly kind: 'paired'; readonly pair: readonly [Outcome<Name>, Outcome<Name>] }>
-    | 7
-    | undefined
-    | null
-    | false;
-  const exact: Assert<Equal<typeof result, Expected>> = true;
-  // @ts-expect-error match does not automatically await asynchronous handlers.
-  const implicitlyAwaited: Awaited<Expected> = result;
-  // @ts-expect-error A mixed result is not automatically wrapped in a Promise.
-  const implicitlyWrapped: Promise<Awaited<Expected>> = result;
-  void [exact, implicitlyAwaited, implicitlyWrapped];
+  const exact: Assert<Equal<typeof distribution, Distribution<Name>>> = true;
+  void exact;
 
   // @ts-expect-error Sorted outcomes cannot be reordered through the public API.
   distribution.sorted.sort();
@@ -85,38 +34,6 @@ export function exactMatchContracts() {
   distribution.profile.numericTolerances.tieAbsolute = 0;
   // @ts-expect-error The complete maximum set is readonly.
   distribution.maxima.push(distribution.first);
-}
-
-export function invalidHandlerContracts(
-  missingPaired: Omit<MatchHandlers<'north' | 'south'>, 'paired'>,
-  wrongShape: Omit<MatchHandlers<'north' | 'south'>, 'paired'> & {
-    paired: (value: DistributionFor<'split', 'north' | 'south'>) => void;
-  },
-  notCallable: Omit<MatchHandlers<'north' | 'south'>, 'flat'> & { flat: number },
-) {
-  const distribution = analyze({ north: 0.64, south: 0.36 });
-  // @ts-expect-error Every variant must have its own callback, even if unlikely for this input.
-  distribution.match(missingPaired);
-  // @ts-expect-error A handler cannot require the wrong discriminated shape.
-  distribution.match(wrongShape);
-  // @ts-expect-error Handler values must be callable.
-  distribution.match(notCallable);
-}
-
-export function callableContainerContract() {
-  const distribution = analyze({ north: 0.64, south: 0.36 });
-  const handlers = Object.assign(() => 'container-return' as const, {
-    dominant: (value) => value.uniqueMaximum.option,
-    paired: (value) => value.pair[1].option,
-    split: () => null,
-    clustered: () => null,
-    flat: () => null,
-    mixed: () => null,
-  } satisfies MatchHandlers<'north' | 'south'>);
-  const result = distribution.match(handlers);
-  // The container's own return type is unrelated to its handler return values.
-  const exact: Assert<Equal<typeof result, 'north' | 'south' | null>> = true;
-  void exact;
 }
 
 function parseTyped<const Answers extends Readonly<Record<string, JevAnswer>>>(

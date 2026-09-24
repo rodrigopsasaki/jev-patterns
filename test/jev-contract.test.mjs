@@ -76,7 +76,6 @@ test('Jev contract: a mixed response retains envelope, IDs, provider fields, and
   assert.equal(result.answers.route.choice, 'a');
   assert.equal(result.answers.route.confidence, 0.137);
   assert.equal(result.answers.route.uniqueMaximum.option, 'a');
-  assert.equal(typeof result.answers.route.match, 'function');
   assert.equal(typeof result.answers.route.is, 'function');
   assert.equal(result.answers.urgent.type, 'noul');
   assert.equal(result.answers.urgent.yes, 0.25);
@@ -109,16 +108,13 @@ test('Jev contract: Choice preserves point masses, zero entries, and confidence 
 
 test('Jev contract: a Choice answer is built without mutating a previously finished Distribution', () => {
   const result = parse(response({ q: choice() })).answers.q;
-  // is()/match() must close over the returned ChoiceAnswer itself, not a plain
-  // Distribution that later had `type`/`choice`/`confidence`/`raw` bolted onto it:
-  // the handler's argument, by reference, is the exact object the caller holds.
-  const received = result.match({
-    dominant: (d) => d,
-    paired: (d) => d,
-    split: (d) => d,
-    clustered: (d) => d,
-    flat: (d) => d,
-    mixed: (d) => d,
+  // is() must close over the returned ChoiceAnswer itself, not a plain Distribution
+  // that later had `type`/`choice`/`confidence`/`raw` bolted onto it: the predicate's
+  // argument, by reference, is the exact object the caller holds.
+  let received;
+  result.is((d) => {
+    received = d;
+    return true;
   });
   assert.equal(received, result);
   assert.equal(received.type, 'choice');

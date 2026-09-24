@@ -25,16 +25,12 @@ export { parse } from './jev.ts';
 export type {
   Distribution,
   DistributionData,
-  DistributionFor,
-  DistributionShape,
   MassSet,
-  MatchHandlers,
   Options,
   Outcome,
   Predicate,
   ProbabilityGroup,
   Profile,
-  ShapeResults,
 } from './model.ts';
 export {
   allOf,

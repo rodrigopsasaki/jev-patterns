@@ -23,7 +23,7 @@ const envelope = (answer) => ({
   usage: { input_tokens: 0, output_tokens: 0 },
   answers: { q: answer },
 });
-const data = ({ is: _is, match: _match, ...rest }) => rest;
+const data = ({ is: _is, ...rest }) => rest;
 
 function invalid(input, path, code) {
   const result = inspectAnswer(input);
@@ -41,11 +41,14 @@ test('inspection: a Choice is usable without an envelope or invented provenance'
   const result = inspectAnswer(input);
   assert.equal(result.kind, 'available');
   assert.equal(result.answer.type, 'choice');
-  assert.equal(result.answer.shape, 'split');
-  assert.deepEqual(result.answer.pair, [
-    { option: 'S1', probability: 0.51 },
-    { option: 'S2', probability: 0.45 },
-  ]);
+  assert.equal(result.answer.maximumProbability, 0.51);
+  assert.deepEqual(
+    [result.answer.first, result.answer.second],
+    [
+      { option: 'S1', probability: 0.51 },
+      { option: 'S2', probability: 0.45 },
+    ],
+  );
   assert.equal(result.answer.confidence, 0.24);
   assert.equal(result.answer.choice, 'S1');
   assert.equal(result.answer.prominent.count, 2);
@@ -57,21 +60,16 @@ test('inspection: a Choice is usable without an envelope or invented provenance'
   }
 });
 
-test('inspection: exhaustive match remains composable and preserves return identity', async () => {
+test('inspection: is() closes over the returned answer and preserves the predicate result', () => {
   const result = inspectAnswer(choice());
   assert.equal(result.kind, 'available');
-  const selected = Promise.resolve({ show: ['S1', 'S2'] });
-  const handlers = Object.fromEntries(
-    ['dominant', 'paired', 'split', 'clustered', 'flat', 'mixed'].map((shape) => [
-      shape,
-      () => {
-        assert.equal(shape, 'split');
-        return selected;
-      },
-    ]),
-  );
-  assert.equal(result.answer.match(handlers), selected);
-  assert.deepEqual(await result.answer.match(handlers), { show: ['S1', 'S2'] });
+  let received;
+  const matched = result.answer.is((d) => {
+    received = d;
+    return d.maximumProbability >= 0.5;
+  });
+  assert.equal(matched, true);
+  assert.equal(received, result.answer);
 });
 
 test('inspection: Promise pipelines preserve missing, available, and invalid outcomes', async () => {
@@ -294,7 +292,7 @@ test('inspection: options, normalization, and the descriptive profile match stri
     assert.deepEqual(data(inspectedDistribution), data(parsedDistribution));
     assert.equal(inspectedDistribution.profile.targetMass, 0.95);
     assert.equal(inspectedDistribution.profile.prominenceRatio, 0.75);
-    assert.equal(inspectedDistribution.profile.id, 'descriptive-v2');
+    assert.equal(inspectedDistribution.profile.id, 'descriptive-v3');
     if (input.type !== 'choice') {
       assert.deepEqual(
         { ...inspected.answer, distribution: null },

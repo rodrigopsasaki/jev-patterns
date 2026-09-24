@@ -6,17 +6,16 @@ import { massSet } from '../src/distribution.ts';
 const probabilities = (weights) =>
   Object.fromEntries(weights.map((weight, i) => [String.fromCharCode(65 + i), weight / 100]));
 
-for (const [weights, shape, count] of [
-  [[97, 1, 1, 1], 'dominant', 1],
-  [[60, 25, 10, 5], 'paired', 1],
-  [[42, 41, 10, 7], 'split', 2],
-  [[34, 33, 30, 3], 'clustered', 3],
-  [[26, 25, 25, 24], 'flat', 4],
-  [[40, 20, 15, 15, 10], 'mixed', 2],
+for (const [weights, count] of [
+  [[97, 1, 1, 1], 1],
+  [[60, 25, 10, 5], 1],
+  [[42, 41, 10, 7], 2],
+  [[34, 33, 30, 3], 3],
+  [[26, 25, 25, 24], 4],
+  [[40, 20, 15, 15, 10], 2],
 ]) {
-  test(`${weights.join('/')} gives ${shape}`, () => {
+  test(`${weights.join('/')} has ${count} prominent outcome(s)`, () => {
     const result = analyze(probabilities(weights));
-    assert.equal(result.shape, shape);
     assert.equal(result.prominent.count, count);
   });
 }
@@ -67,10 +66,9 @@ test('full mass keeps tiny positive tails and ordinary boundaries tolerate round
   assert.ok(Math.abs(boundary.mass - 0.8) < 1e-12);
 });
 
-test('shape and default prominent-outcome count share the same ratio comparison', () => {
+test('default prominent-outcome count applies the same ratio comparison near its boundary', () => {
   const result = analyze({ a: 0.4, b: 0.2 - 6e-13, c: 0.2 - 6e-13, d: 0.15, e: 0.05 + 12e-13 });
   assert.equal(result.prominent.count, 1);
-  assert.equal(result.shape, 'mixed');
 });
 
 test('relative comparison tolerance cannot swallow a tiny custom prominence ratio', () => {
@@ -81,14 +79,13 @@ test('relative comparison tolerance cannot swallow a tiny custom prominence rati
 test('zero padding and insertion order preserve descriptors', () => {
   const a = analyze({ a: 0.42, b: 0.41, c: 0.1, d: 0.07 });
   const b = analyze({ d: 0.07, c: 0.1, b: 0.41, a: 0.42, z: 0 });
-  for (const key of ['shape', 'prominent', 'metrics', 'massSet', 'maxima', 'input']) {
+  for (const key of ['prominent', 'metrics', 'massSet', 'maxima', 'input']) {
     assert.deepEqual(a[key], b[key]);
   }
 });
 
-test('custom shortlist does not silently redefine shape profile', () => {
+test('custom shortlist does not silently redefine mass-set or prominence defaults', () => {
   const result = analyze(probabilities([60, 25, 10, 5]), { prominenceRatio: 0.4, targetMass: 0.9 });
-  assert.equal(result.shape, 'paired');
   assert.equal(result.prominent.count, 2);
   assert.equal(result.massSet.count, 3);
   assert.equal(result.profile.prominenceRatio, 0.4);

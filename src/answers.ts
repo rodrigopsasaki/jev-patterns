@@ -125,8 +125,8 @@ export function readAnswer(
   }
   if (answer.type === 'choice') {
     const choice = text(answer.choice, 'choice');
-    // Built in one step so is()/match() close over this exact, already-complete answer
-    // rather than a Distribution that gets fields bolted onto it after analyze() returns it.
+    // Built in one step so is() closes over this exact, already-complete answer rather
+    // than a Distribution that gets fields bolted onto it after analyze() returns it.
     const choiceAnswer = analyzeExtended(answer.probabilities, options, {
       type: 'choice' as const,
       choice,

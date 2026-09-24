@@ -25,7 +25,7 @@ for (const [id, inspection] of inspections) {
     case 'available': {
       const answer = inspection.answer;
       const distribution = answer.type === 'choice' ? answer : answer.distribution;
-      console.log(id, distribution.shape, distribution.summary);
+      console.log(id, distribution.first, distribution.maximumProbability);
       break;
     }
     case 'missing':

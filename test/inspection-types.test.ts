@@ -1,5 +1,5 @@
 import {
-  type DistributionFor,
+  dominant,
   type InspectableAnswer,
   type InspectedAnswer,
   type InspectedAnswerFor,
@@ -25,7 +25,7 @@ export function literalInspection() {
   const exact: Assert<Equal<typeof result, Inspection<InspectedChoice<'S1' | 'S2' | 'none'>>>> =
     true;
   // @ts-expect-error Outcomes must be narrowed before reading an answer.
-  result.answer.shape;
+  result.answer.first;
   if (result.kind === 'available') {
     const value = result.answer;
     const confidence: Assert<Equal<typeof value.confidence, number | null>> = true;
@@ -35,32 +35,19 @@ export function literalInspection() {
     value.first.probability = 1;
     // @ts-expect-error Raw snapshots are readonly at the top level.
     value.raw.confidence = 1;
-    const action = value.match({
-      dominant: (d) => d.uniqueMaximum.option,
-      paired: (d) => d.pair[1].option,
-      split: (d) => {
-        const narrowed: Assert<Equal<typeof d, DistributionFor<'split', 'S1' | 'S2' | 'none'>>> =
-          true;
-        void narrowed;
-        return 'clarify' as const;
-      },
-      clustered: () => null,
-      flat: () => null,
-      mixed: () => null,
-    });
-    const returned: Assert<Equal<typeof action, 'S1' | 'S2' | 'none' | 'clarify' | null>> = true;
-    // @ts-expect-error All six shape handlers are mandatory.
-    value.match({ dominant: () => 'accept' });
-    if (value.shape === 'split') {
+    const concentrated: Assert<Equal<ReturnType<typeof value.is>, boolean>> = true;
+    const structural: boolean = value.is(dominant());
+    if (value.maximumProbability >= 0.5 && value.second !== null) {
       const names: readonly ['S1' | 'S2' | 'none', 'S1' | 'S2' | 'none'] = [
-        value.pair[0].option,
-        value.pair[1].option,
+        value.first.option,
+        value.second.option,
       ];
       void names;
     }
     // @ts-expect-error Observations are readonly.
-    value.shape = 'flat';
-    void [confidence, certain, returned];
+    // biome-ignore lint/correctness/noSelfAssign: the assignment itself is the point of the check.
+    value.first = value.first;
+    void [confidence, certain, concentrated, structural];
   }
   void exact;
 }

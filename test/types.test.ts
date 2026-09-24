@@ -20,52 +20,10 @@ export function publicTypes(input: unknown) {
   massSet({ a: 1 }, 1).count = 0;
   const numericKey: '0' | '1' = analyze({ 0: 0.6, 1: 0.4 }).first.option;
 
-  const action = distribution.match({
-    dominant: (d) => {
-      const name: typeof option = d.uniqueMaximum.option;
-      const shape: 'dominant' = d.shape;
-      return { kind: 'route', option: name, shape } as const;
-    },
-    paired: (d) => ({ kind: 'inspect', option: d.pair[1].option }) as const,
-    split: (d) => {
-      const pair: readonly [
-        { readonly option: typeof option },
-        { readonly option: typeof option },
-      ] = d.pair;
-      // @ts-expect-error Split includes exact ties.
-      d.uniqueMaximum.option;
-      return { kind: 'compare', pair } as const;
-    },
-    clustered: (d) => d.prominent.count,
-    flat: () => null,
-    mixed: async (d) => d.first.option,
-  });
-  const output:
-    | { readonly kind: 'route' | 'inspect' | 'compare' }
-    | number
-    | null
-    | Promise<typeof option> = action;
-  // @ts-expect-error match() preserves the union of handler return types.
-  const impossible: boolean = action;
-  const partial = {
-    dominant: () => 'one',
-    paired: () => 'two',
-    split: () => 'close',
-    clustered: () => 'group',
-    flat: () => 'even',
-  };
-  // @ts-expect-error Exhaustive matching also requires mixed.
-  distribution.match(partial);
-
-  if (distribution.shape === 'dominant') {
-    const uniqueMaximum: typeof option = distribution.uniqueMaximum.option;
-    void uniqueMaximum;
-  }
-  if (distribution.is(dominant({ floor: 0.6 }))) {
-    // @ts-expect-error Structural tests do not narrow the assigned shape.
-    const shape: 'dominant' = distribution.shape;
-    void shape;
-  }
+  // Structural tests are ordinary booleans; they never narrow option-level types.
+  const stillOption: typeof option = distribution.is(dominant({ floor: 0.6 }))
+    ? distribution.first.option
+    : distribution.first.option;
 
   const response = parse({
     model: 'synthetic',
@@ -105,7 +63,7 @@ export function publicTypes(input: unknown) {
   const unknownOption: string = analyze(input).first.option;
   // @ts-expect-error Unknown input cannot acquire promised literal names.
   const fabricated: typeof option = analyze(input).first.option;
-  void [wrong, numericKey, output, impossible, choice, type, yes, level, unknownOption, fabricated];
+  void [wrong, numericKey, stillOption, choice, type, yes, level, unknownOption, fabricated];
 }
 
 export function broadRecords(response: JevResponse<Record<string, JevAnswer>>) {
