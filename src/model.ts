@@ -16,8 +16,8 @@ export interface Options {
   readonly targetMass?: number;
 }
 
-export interface RankOptions<Option extends string = string> {
-  readonly exclude?: readonly Option[];
+export interface RankOptions<Excluded extends readonly string[] = readonly string[]> {
+  readonly exclude?: Excluded;
   readonly limit?: number;
 }
 

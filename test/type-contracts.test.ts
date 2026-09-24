@@ -55,6 +55,9 @@ export function exactRankContract() {
 
   // @ts-expect-error Excluding a literal outside the typed probability map is a compile error.
   rank(probabilities, { exclude: ['unknown'] });
+
+  // @ts-expect-error A typed probability map's values must be numbers, same as analyze()/massSet().
+  rank({ billing: 'high', refund: 'low' });
 }
 
 function parseTyped<const Answers extends Readonly<Record<string, JevAnswer>>>(

@@ -76,6 +76,14 @@ export function massSet(input: unknown, targetMass: number): MassSet {
 type RankOption<Input> = Input extends object ? OptionKeys<Input> : string;
 
 /**
+ * A typed probability map's values must be numbers, same as `analyze()`/`massSet()`;
+ * `unknown`/untyped input (which has no closed vocabulary to check anyway) passes through.
+ */
+type RankInput<Input> = Input extends object
+  ? Input & { readonly [Key in keyof Input]: number }
+  : Input;
+
+/**
  * Rank options by probability, excluding some labels (e.g. an "other" catch-all or a
  * none-sentinel) and optionally keeping only the top `limit`. Shares `analyze()`'s
  * validation and tie-breaking order. Probabilities are not renormalized after exclusion:
@@ -87,8 +95,8 @@ export function rank<
   const Input,
   const Excluded extends readonly RankOption<Input>[] = readonly [],
 >(
-  input: Input,
-  options?: { readonly exclude?: Excluded; readonly limit?: number },
+  input: RankInput<Input>,
+  options?: RankOptions<Excluded>,
 ): readonly Outcome<Exclude<RankOption<Input>, Excluded[number]>>[];
 export function rank(input: unknown, options: RankOptions = {}): readonly Outcome[] {
   const { exclude, limit } = options;
