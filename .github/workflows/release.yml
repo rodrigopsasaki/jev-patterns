@@ -60,12 +60,24 @@ jobs:
       - name: Create Release PR or Publish
         id: changesets
         # changesets/action still owns the version-PR half (accumulating
-        # changesets into a "chore: version packages" PR). Its GitHub-release
-        # creation is driven by "New tag: ..." lines printed by `changeset
-        # publish`; `npm run release` no longer calls that (it stages
-        # instead, via scripts/stage-release.mjs) and deliberately prints no
-        # such line, so this step never creates a tag or GitHub release. A
-        # release/tag is not automatic anymore — see docs/release-policy.md.
+        # changesets into a "chore: version packages" PR).
+        #
+        # v2.0.0 renamed the v1 inputs we use: version -> version-script,
+        # publish -> publish-script, commit -> commit-message,
+        # title -> pr-title. Keeping the old v1 names would not error — v2
+        # just ignores unknown `with:` keys — it would silently fall back to
+        # `changeset publish` as the default publish step (a no-op here,
+        # since we don't call `changeset publish` from npm scripts) and this
+        # job would never run `npm run release`, so nothing would ever stage.
+        #
+        # v2 also defaulted `create-github-releases` and `push-git-tags` to
+        # `true`, decoupled from any "New tag: ..." string in the publish
+        # step's output. `npm run release` stages via
+        # scripts/stage-release.mjs rather than publishing, so a tag or
+        # GitHub release here would announce a version before a maintainer
+        # has approved the stage with 2FA — see docs/release-policy.md. Both
+        # are pinned `false` explicitly rather than relied on to be inferred
+        # from the script's behavior.
         #
         # v2 defaults to pushing release commits/tags via the GitHub API
         # instead of the Git CLI (push-with-git-cli: false); the job's
@@ -77,7 +89,9 @@ jobs:
         # var is dropped rather than kept as dead config.
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          version: npm run version-packages
-          publish: npm run release
-          title: "chore: version packages"
-          commit: "chore: version packages"
+          version-script: npm run version-packages
+          publish-script: npm run release
+          pr-title: "chore: version packages"
+          commit-message: "chore: version packages"
+          create-github-releases: false
+          push-git-tags: false
