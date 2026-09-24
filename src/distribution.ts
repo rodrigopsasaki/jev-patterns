@@ -84,12 +84,16 @@ type RankInput<Input> = Input extends object
   : Input;
 
 /**
- * Rank options by probability, excluding some labels (e.g. an "other" catch-all or a
- * none-sentinel) and optionally keeping only the top `limit`. Shares `analyze()`'s
- * validation and tie-breaking order. Probabilities are not renormalized after exclusion:
- * a returned entry keeps its original model probability, exclusion only filters which
- * entries appear. There is no separate "top-1 excluding X" helper; that is
- * `rank(p, { exclude, limit: 1 })[0]`.
+ * Order any map of probability-like scores in [0, 1], optionally excluding some labels
+ * (e.g. an "other" catch-all or a none-sentinel) and keeping only the top `limit`.
+ * Ranking is invariant to scale, so unlike `analyze()`/`massSet()`, `rank()` does not
+ * require the map to be nonempty or sum to 1: it accepts unnormalized judge estimates
+ * (e.g. a model only asked for "roughly sums to 1") as well as full distributions, and
+ * an empty map ranks to `[]`. Values come back exactly as given — never rescaled — and
+ * tie-breaking (probability desc, then option key asc) matches `analyze()`/`massSet()`.
+ * Probabilities are not renormalized after exclusion: a returned entry keeps its
+ * original probability, exclusion only filters which entries appear. There is no
+ * separate "top-1 excluding X" helper; that is `rank(p, { exclude, limit: 1 })[0]`.
  */
 export function rank<
   const Input,
@@ -101,7 +105,7 @@ export function rank<
 export function rank(input: unknown, options: RankOptions = {}): readonly Outcome[] {
   const { exclude, limit } = options;
   if (limit !== undefined) requireLimit(limit);
-  const { sorted } = readProbabilities(input);
+  const sorted = parseOutcomes(input);
   if (exclude === undefined) return limit === undefined ? sorted : sorted.slice(0, limit);
   const excluded = new Set(exclude);
   const filtered = sorted.filter((item) => !excluded.has(item.option));
@@ -145,7 +149,14 @@ function selectProminent(sorted: readonly Outcome[], first: number, ratio: numbe
   return sorted.filter((item) => item.probability > 0 && atLeast(item.probability / first, ratio));
 }
 
-function readProbabilities(input: unknown) {
+/**
+ * The validation and deterministic ordering every probability-map entry point shares:
+ * a plain object, per-value finite-in-[0,1] checks, sorted probability desc then option
+ * key asc. Ranking needs nothing more than this. `readProbabilities()` layers the
+ * nonempty/sum/rescale requirements that `analyze()`/`massSet()` additionally need on
+ * top of it.
+ */
+function parseOutcomes(input: unknown): { option: string; probability: number }[] {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
     throw new InputIssue(['probabilities'], 'invalid-type', 'probabilities must be a nonempty map');
   }
@@ -167,6 +178,12 @@ function readProbabilities(input: unknown) {
   });
   // Fix the accumulation order as well as the display order for reproducibility.
   sorted.sort((a, b) => b.probability - a.probability || compareKeys(a.option, b.option));
+  return sorted;
+}
+
+function readProbabilities(input: unknown) {
+  // These outcome objects are owned by this function, never borrowed from input.
+  const sorted = parseOutcomes(input);
   const first = sorted[0];
   if (!first)
     throw new InputIssue(['probabilities'], 'invalid-total', 'probabilities must be nonempty');
@@ -178,7 +195,6 @@ function readProbabilities(input: unknown) {
       `Probabilities must sum to 1; received ${total}`,
     );
   }
-  // These outcome objects are owned by this function, never borrowed from input.
   for (const item of sorted) item.probability /= total;
   return { sorted, total, first };
 }

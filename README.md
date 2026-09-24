@@ -200,7 +200,7 @@ const probabilities = { password_reset: 0.51, account_locked: 0.45, other: 0.04 
 const topCause = rank(probabilities, { exclude: ['other'], limit: 1 })[0];
 ```
 
-`rank()` shares `analyze()`'s validation and deterministic tie order. It does not renormalize after exclusion: the remaining entries keep their original model probability, exclusion just filters which entries appear. There is no separate "top-1 excluding X" helper; that is `rank(p, { exclude, limit: 1 })[0]`. With a typed probability map, excluding a literal option name outside its keys is a compile error, not a silent no-op; an untyped map has no closed vocabulary to check an excluded label against, so an absent label is silently ignored.
+`rank()` orders any map of probability-like scores in `[0, 1]`; unlike `analyze()`/`massSet()`, it does not require the map to be normalized. Ordering is invariant to scale, so `rank()` accepts unnormalized judge estimates (a model only asked to roughly sum to 1) as well as full distributions, and an empty map ranks to `[]`. Values come back exactly as given — never rescaled — and tie order matches `analyze()`/`massSet()` (probability descending, then option key ascending). It does not renormalize after exclusion: the remaining entries keep their original probability, exclusion just filters which entries appear. There is no separate "top-1 excluding X" helper; that is `rank(p, { exclude, limit: 1 })[0]`. With a typed probability map, excluding a literal option name outside its keys is a compile error, not a silent no-op; an untyped map has no closed vocabulary to check an excluded label against, so an absent label is silently ignored.
 
 ### Express a structural policy with no assumed predictive value
 
@@ -239,7 +239,7 @@ Score levels are ordered. A categorical view by itself cannot distinguish probab
 | `parse(response, options?)` | Validate decoded Jev JSON and add typed distribution views. |
 | `.is(predicate)` | Test structure using a supplied function. |
 | `massSet(probabilities, targetMass)` | Keep a ranked prefix reaching a requested mass within numeric tolerance, retaining boundary ties. |
-| `rank(probabilities, options?)` | Order options by probability; optionally `exclude` labels and `limit` to the top N, without renormalizing. |
+| `rank(probabilities, options?)` | Order any `[0, 1]`-valued map by probability, normalized or not; optionally `exclude` labels and `limit` to the top N, without renormalizing. |
 
 `sorted`, `first`, `second`, `maxima`, `uniqueMaximum`, and `gap` expose rank and ties. Sorting tied entries never creates a unique maximum. `prominent` groups positive-probability outcomes at least a configurable fraction of the maximum, within numeric tolerance; `massSet` groups by accumulated mass; `rank` returns the same deterministic order as a plain list, optionally filtered and truncated.
 
