@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "npm run check:full && changeset publish"
+    "release": "npm run check:full && node scripts/stage-release.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
