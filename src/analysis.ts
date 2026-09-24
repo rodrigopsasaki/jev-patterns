@@ -9,6 +9,7 @@ import type {
   Predicate,
   Profile,
   ShapeDetails,
+  ShapeResults,
 } from './model.ts';
 import { numericTolerances } from './numeric.ts';
 import { clustered, defaultThresholds, dominant, flat, paired, split } from './predicates.ts';
@@ -73,16 +74,8 @@ function construct<Extra extends object>(
     is(predicate: Predicate): boolean {
       return predicate(result);
     },
-    match<const Handlers extends MatchHandlers>(
-      handlers: Handlers,
-    ): ReturnType<Handlers[DistributionShape]> {
-      // dispatch returns exactly the selected handler's value. TypeScript loses that
-      // return-type correlation when invoking a handler from the mapped dictionary:
-      // `Handlers` is only a bound type parameter here, so the call is typed against
-      // its `MatchHandlers` constraint (return `unknown`), not the caller's concrete
-      // `Handlers`. This is a TypeScript limitation on generic property access, not a
-      // design gap; no cast-free formulation was found (see PR/commit notes).
-      return dispatch(result, handlers) as ReturnType<Handlers[DistributionShape]>;
+    match<const R extends ShapeResults>(handlers: MatchHandlers<string, R>): R[DistributionShape] {
+      return dispatch(result, handlers);
     },
   };
   return result;
@@ -108,10 +101,10 @@ function describe(data: DistributionData): ShapeDetails<string> {
   return { shape: 'mixed' };
 }
 
-function dispatch<Option extends string>(
+function dispatch<Option extends string, R extends ShapeResults>(
   distribution: Distribution<Option>,
-  handlers: MatchHandlers<Option>,
-): unknown {
+  handlers: MatchHandlers<Option, R>,
+): R[DistributionShape] {
   for (const shape of shapes) {
     if (
       handlers === null ||
@@ -122,6 +115,9 @@ function dispatch<Option extends string>(
       throw new TypeError(`match() requires a handler for ${JSON.stringify(shape)}`);
     }
   }
+  // Each branch's return type is `R[Shape]` (a member of the declared return type
+  // `R[DistributionShape]`), correlated with the caller's actual handler map through
+  // MatchHandlers' `keyof R` mapping. No cast is needed to reassemble the union.
   switch (distribution.shape) {
     case 'dominant':
       return handlers.dominant(distribution);

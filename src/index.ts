@@ -34,6 +34,7 @@ export type {
   Predicate,
   ProbabilityGroup,
   Profile,
+  ShapeResults,
 } from './model.ts';
 export {
   allOf,
