@@ -158,7 +158,11 @@ function selectProminent(sorted: readonly Outcome[], first: number, ratio: numbe
  */
 function parseOutcomes(input: unknown): { option: string; probability: number }[] {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
-    throw new InputIssue(['probabilities'], 'invalid-type', 'probabilities must be a nonempty map');
+    throw new InputIssue(
+      ['probabilities'],
+      'invalid-type',
+      'probabilities must be a map of option to probability',
+    );
   }
   const entries = Object.entries(input);
   const sorted = entries.map(([option, probability]) => {

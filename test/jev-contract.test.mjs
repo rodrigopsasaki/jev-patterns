@@ -520,7 +520,10 @@ test('Jev contract: Choice requires a string that is one of the probability maxi
 test('Jev contract: Choice and Score reject missing, malformed, empty, and non-normalized probability maps', () => {
   for (const factory of [choice, score]) {
     for (const value of [undefined, null, 'map', false, 1, []]) {
-      expectAnswerError(factory({ probabilities: value }), 'probabilities must be a nonempty map');
+      expectAnswerError(
+        factory({ probabilities: value }),
+        'probabilities must be a map of option to probability',
+      );
     }
     for (const value of [{}, Object.create(null)]) {
       expectAnswerError(factory({ probabilities: value }), 'probabilities must be nonempty');
