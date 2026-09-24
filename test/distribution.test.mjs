@@ -123,7 +123,10 @@ test('small floating point drift is reported; malformed mass is rejected', () =>
     { a: NaN },
     { a: Infinity },
     { a: '1' },
-    { a: 0.99 },
+    // Clearly wrong sums (not wire-rounding drift) must still be rejected under the
+    // widened wire-rounding tolerance.
+    { a: 0.6, b: 0.3 },
+    { a: 0.6, b: 0.5 },
     [],
     null,
   ]) {

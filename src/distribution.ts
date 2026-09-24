@@ -171,7 +171,7 @@ function readProbabilities(input: unknown) {
   if (!first)
     throw new InputIssue(['probabilities'], 'invalid-total', 'probabilities must be nonempty');
   const total = sum(sorted.map((item) => item.probability));
-  if (total <= 0 || Math.abs(total - 1) > numericTolerances.inputSumAbsolute) {
+  if (total <= 0 || Math.abs(total - 1) > numericTolerances.wireRoundingAbsolute) {
     throw new InputIssue(
       ['probabilities'],
       'invalid-total',

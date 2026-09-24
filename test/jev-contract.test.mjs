@@ -703,3 +703,32 @@ test('Jev contract: seeded valid mixed responses preserve all probabilities and 
     }
   }
 });
+
+test('parse() accepts a real-shaped wire response whose choice probabilities sum to 0.99', () => {
+  // Real Jev responses round each option to two decimals before serializing, so a sum a
+  // cent off 1 is normal wire output, not malformed input. This fixture is synthetic.
+  const input = response({
+    q: choice({
+      choice: 'adjacent',
+      probabilities: { exact: 0.05, adjacent: 0.93, combination: 0.01 },
+    }),
+  });
+  const result = parse(input);
+  assert.equal(result.answers.q.choice, 'adjacent');
+  assert.ok(Math.abs(result.answers.q.input.total - 0.99) < 1e-9);
+  assert.equal(result.answers.q.input.normalized, true);
+});
+
+test('parse() still rejects a choice whose probabilities are unconverted percentages', () => {
+  // 51/45/4 as raw percentages (not fractions) fail the per-value [0, 1] check before the
+  // sum is even considered.
+  expectAnswerError(
+    choice({ probabilities: { S1: 51, S2: 45, none: 4 } }),
+    fractionError('Probability for "S1"'),
+  );
+  // A grossly wrong fractional sum (0.9, not wire-rounding drift) must still be rejected.
+  expectAnswerError(
+    choice({ probabilities: { S1: 0.5, S2: 0.4 } }),
+    'Probabilities must sum to 1; received 0.9',
+  );
+});
