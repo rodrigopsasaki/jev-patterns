@@ -73,7 +73,7 @@ Missing confidence becomes `null` in the inspected view. It never borrows a numb
 
 ## Why v0.3 removed the named shapes
 
-Earlier versions classified a distribution into one of six named shapes (`dominant`, `paired`, `split`, `clustered`, `flat`, `mixed`) and dispatched on that label with `match()`. A board evaluated that vocabulary against 356 labeled judge answers (Jev plus two local judges) and found it added no information about a top answer's correctness beyond `maximumProbability` alone:
+Earlier versions classified a distribution into one of six named shapes (`dominant`, `paired`, `split`, `clustered`, `flat`, `mixed`) and dispatched on that label with `match()`. An evaluation tested that vocabulary against 356 labeled judge answers (Jev plus two local judges) and found it added no information about a top answer's correctness beyond `maximumProbability` alone:
 
 - `dominant` at its default floor (`0.8`) is *exactly* the predicate `maximumProbability >= 0.8` — bin purity 1.0, not a discovered pattern.
 - `paired`'s apparent "the runner-up is worth checking" signal is fully reproduced by a shape-agnostic `maximumProbability` band: for `0.5 <= maximumProbability < 0.8`, the top answer alone is correct 66% of the time, versus 93% for the top two (n=61) — the same lift `paired` claims to add.
