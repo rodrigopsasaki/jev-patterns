@@ -1,0 +1,76 @@
+interlock: graph@v0
+id: measure-thresholds
+ask: Let a caller choose a judge floor from their own labeled answers, the way Preston chose its floors by hand.
+derivation:
+  kind: model
+  model: claude-opus-5-5
+  prompt: rodrigo-conversation-2026-09-24-jev-patterns-next-move
+read: >
+  Jev's confidence is a statistic of the distribution's shape, not the probability that the answer
+  is right, and a v0.3 evaluation showed maximumProbability predicts correctness only for a model
+  someone has validated. Every floor Preston uses was chosen by hand from labeled answers (citation
+  support: 95.8% precise at 60.5% coverage at 0.8), and a local benchmark found every 0.8 floor was
+  tuned on one Jev version, so a model swap is a per-surface re-validation. This graph adds the
+  measurement that re-validation needs, inside the library's boundary: it describes the tradeoff
+  at each threshold; the caller picks the floor. Proof is reproduction: a private gate re-derives
+  Preston's published floor numbers from recorded data through the new function. Out of scope:
+  choosing a floor for the caller, calibration curves (mapping a score to P(correct)), request
+  packing, and any change to existing exports.
+gates:
+  - id: approved
+    kind: human
+nodes:
+  - id: measure-thresholds
+    depends_on: []
+    acceptance: |
+      Add `measureThresholds(observations, options?)` to the public API of jev-patterns, exported
+      from src/index.ts, in its own module under src/. It measures, for each threshold, how many
+      labeled observations score at or above it and how often those are correct. It never
+      recommends or selects a threshold.
+
+      Contract (names and semantics are fixed; a private gate codes against them):
+      - `interface ThresholdObservation { readonly score: number; readonly correct: boolean }`.
+      - `measureThresholds(observations: readonly ThresholdObservation[], options?: { readonly
+        thresholds?: readonly number[] }): ThresholdMeasurement`.
+      - `ThresholdMeasurement` has `n`, `correct` (total correct), `auroc: number | null`, and
+        `thresholds: readonly ThresholdPoint[]` sorted ascending by `threshold`, one point per
+        distinct threshold. Default thresholds: every distinct observed score. Explicit
+        thresholds: validated finite and in [0, 1], deduplicated, sorted.
+      - Every `ThresholdPoint` has `threshold`, `covered` (observations with score >= threshold,
+        compared with the library's existing tolerant `atLeast` from src/numeric.ts), `coverage`
+        (covered / n) and `correct` (correct among covered). When covered > 0 it also has
+        `precision` (correct / covered) and a Wilson 95% score interval `{ lower, upper }`; when
+        covered is 0 neither exists. Model this as a readable discriminated union so that neither
+        illegal state (covered > 0 without precision, covered 0 with a precision) can be
+        represented. No record bags, no mapped-type machinery.
+      - `auroc` is the Mann-Whitney probability that a correct observation outscores an incorrect
+        one, with mid-rank ties; null when every observation is correct or every one is incorrect.
+      - Validation throws the library's existing InputIssue style: each score finite and in
+        [0, 1], each `correct` a boolean, observations an array. An empty array is valid: n 0, no
+        points, auroc null.
+      - Deterministic: no randomness, no dependence on input order (permuting observations never
+        changes the result).
+
+      Tests, per AGENTS.md: hand-computed fixtures for coverage, precision and Wilson bounds
+      (derive expected values by hand, never by calling the code under test); AUROC against two
+      hand-computed toy cases including ties; the all-correct and all-incorrect null cases;
+      boundary scores exactly at a threshold; permutation invariance; validation failures; the
+      empty case; positive and negative consumer type tests in test/type-contracts.test.ts proving
+      the union narrows. Document it in README.md in the repository's voice: what it measures, that
+      the caller chooses the floor, and that a floor measured on one model does not transfer to
+      another. Add a `minor` changeset in consumer terms. Keep runtime dependencies at zero and
+      coverage at 100%. Strict TypeScript: no `as`, no `any`, no non-null operators. Preserve every
+      existing export and behavior. Append typed notes for choices and surprises. Commit on the
+      node's branch with Conventional Commits whose subjects state why. No push, no merge, no
+      publish; the human merges.
+    gates:
+      - id: check-full
+        kind: command
+        run: npm run check:full
+      - id: floors-reproduced
+        kind: command
+        run: node /Users/rodrigosasaki/dev/private/jev-local-bench/shape-eval/src/reproduce-floors.ts ./src/index.ts
+        expect_output: 'floors reproduced: 3/3'
+      - id: debrief-valid
+        kind: command
+        run: interlock debrief validate {graph} {node}
