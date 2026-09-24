@@ -60,6 +60,41 @@ export function exactRankContract() {
   rank({ billing: 'high', refund: 'low' });
 }
 
+// A non-literal `exclude` array has no statically known members, so narrowing it away from
+// the option union is unsound: it must not collapse `.option` to `never`, and it must not
+// claim a union member is impossible when the array's exact contents aren't known.
+export function exactRankNonLiteralExcludeContract(
+  scores: Record<string, number>,
+  someStrings: string[],
+  unionExclude: readonly ('billing' | 'other')[],
+) {
+  const NONE = 'none';
+  const maybeString: string = 'other';
+
+  // Open dictionary input + a plain `string[]` exclude: `.option` stays `string`, not `never`.
+  const openRanked = rank(scores, { exclude: someStrings });
+  const openType: Assert<Equal<typeof openRanked, readonly Outcome<string>[]>> = true;
+  void openType;
+
+  // Open dictionary input + a mixed literal/widened-variable array: still `string`, since the
+  // array's length (and therefore its exact membership) is not statically known.
+  const mixedRanked = rank(scores, { exclude: [NONE, maybeString] });
+  const mixedType: Assert<Equal<typeof mixedRanked, readonly Outcome<string>[]>> = true;
+  void mixedType;
+
+  // Typed literal input + a union-typed array VARIABLE (not an inline literal tuple): the
+  // array's length is `number`, so the result keeps the full option union. Narrowing away
+  // 'b' here would be a lie: only whatever 'a' | 'b' values are actually in the array at
+  // runtime are excluded, and the type can't know which.
+  const literalInput = { billing: 0.51, refund: 0.45, other: 0.04 };
+  const unionRanked = rank(literalInput, { exclude: unionExclude });
+  type LiteralName = 'billing' | 'refund' | 'other';
+  const unionType: Assert<Equal<typeof unionRanked, readonly Outcome<LiteralName>[]>> = true;
+  void unionType;
+
+  void maybeString;
+}
+
 function parseTyped<const Answers extends Readonly<Record<string, JevAnswer>>>(
   input: JevResponse<Answers>,
 ) {

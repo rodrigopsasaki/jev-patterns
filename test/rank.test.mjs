@@ -129,3 +129,10 @@ test('regression: analyze and massSet still reject a 0.93-sum map (the split did
   assert.throws(() => analyze(underNormalized), TypeError);
   assert.throws(() => massSet(underNormalized, 0.8), TypeError);
 });
+
+test('excluding via a non-literal array filters identically to an inline literal tuple (type fix, no runtime change)', () => {
+  const data = { billing: 0.51, refund: 0.45, other: 0.04 };
+  /** @type {string[]} */
+  const excludeList = ['other'];
+  assert.deepEqual(rank(data, { exclude: excludeList }), rank(data, { exclude: ['other'] }));
+});

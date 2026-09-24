@@ -84,6 +84,29 @@ type RankInput<Input> = Input extends object
   : Input;
 
 /**
+ * `rank()`'s result option type. Subtracting `Excluded[number]` from the option union is
+ * only sound when every excluded member is known at the type level, which needs two things:
+ * a statically known length (a tuple, not a plain array — `string[]`'s length is `number`,
+ * not a literal) and statically known members (every element a literal, not widened to
+ * plain `string` — `[CONST, someStringVariable]` is still a fixed-length tuple, but its
+ * second slot's type is the whole `string` vocabulary, not one value from it). Failing
+ * either check, narrowing would either collapse an open `string` vocabulary to `never`
+ * (nothing could ever be excluded away entirely) or claim members of a closed union are
+ * impossible when only some of that union's values are actually excluded at runtime. In
+ * both failure cases the option type stays the full `RankOption<Input>`. `const Excluded`
+ * at the call site still infers a literal tuple of literal members for an inline
+ * `exclude: ['other']`, so that narrowing is unaffected.
+ */
+type RankedOption<
+  Input,
+  Excluded extends readonly RankOption<Input>[],
+> = number extends Excluded['length']
+  ? RankOption<Input>
+  : string extends Excluded[number]
+    ? RankOption<Input>
+    : Exclude<RankOption<Input>, Excluded[number]>;
+
+/**
  * Order any map of probability-like scores in [0, 1], optionally excluding some labels
  * (e.g. an "other" catch-all or a none-sentinel) and keeping only the top `limit`.
  * Ranking is invariant to scale, so unlike `analyze()`/`massSet()`, `rank()` does not
@@ -101,7 +124,7 @@ export function rank<
 >(
   input: RankInput<Input>,
   options?: RankOptions<Excluded>,
-): readonly Outcome<Exclude<RankOption<Input>, Excluded[number]>>[];
+): readonly Outcome<RankedOption<Input, Excluded>>[];
 export function rank(input: unknown, options: RankOptions = {}): readonly Outcome[] {
   const { exclude, limit } = options;
   if (limit !== undefined) requireLimit(limit);
