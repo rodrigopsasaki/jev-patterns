@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Report `input.normalized` only once a distribution's total differs from 1 beyond a new, declared `normalizedAbsolute` tolerance (1e-12), surfaced under `profile.numericTolerances`. Summation-order float noise (e.g. `analyze({ a: 0.1, b: 0.2, c: 0.7 })`) no longer reports normalization; deliberate drift within the existing 1e-8 input-sum tolerance still does. Rescaling remains unconditional. `descriptive-v2` shape thresholds and precedence are unchanged.
+- Build Choice answers (`readAnswer`/`parse`) without mutating an already-returned Distribution: `is()`/`match()` on a Choice answer now close over the one object constructed with its `type`/`choice`/`confidence`/`raw` fields already in place, rather than a plain Distribution that later had those fields assigned onto it. Observable behavior, including reference identity seen by `match()` handlers, is unchanged.
 
 ## 0.2.0 — 2026-09-23
 

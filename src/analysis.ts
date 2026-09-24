@@ -34,7 +34,28 @@ export function analyze<const Input extends object>(
 ): Distribution<OptionKeys<Input>>;
 export function analyze(input: unknown, options?: Options): Distribution;
 export function analyze(input: unknown, options: Options = {}): Distribution {
-  const data = measure(input, options);
+  return construct(measure(input, options), options, {});
+}
+
+/**
+ * Build a Distribution merged with caller-supplied fields (e.g. a Choice answer's `choice`,
+ * `confidence` and `raw`) in the same construction step as `analyze()`. This lets `is()` and
+ * `match()` close over the one, already-complete object, so a caller never has to extend a
+ * Distribution that analyze() already handed back as finished.
+ */
+export function analyzeExtended<Extra extends object>(
+  input: unknown,
+  options: Options,
+  extra: Extra,
+): Distribution & Extra {
+  return construct(measure(input, options), options, extra);
+}
+
+function construct<Extra extends object>(
+  data: DistributionData,
+  options: Options,
+  extra: Extra,
+): Distribution & Extra {
   const details = describe(data);
   const profile: Profile = {
     id: 'descriptive-v2',
@@ -43,9 +64,10 @@ export function analyze(input: unknown, options: Options = {}): Distribution {
     thresholds: defaultThresholds,
     numericTolerances,
   };
-  const result: Distribution = {
+  const result: Distribution & Extra = {
     ...data,
     ...details,
+    ...extra,
     profile,
     summary: summary(data, details.shape),
     is(predicate: Predicate): boolean {
@@ -55,7 +77,11 @@ export function analyze(input: unknown, options: Options = {}): Distribution {
       handlers: Handlers,
     ): ReturnType<Handlers[DistributionShape]> {
       // dispatch returns exactly the selected handler's value. TypeScript loses that
-      // return-type correlation when invoking a handler from the mapped dictionary.
+      // return-type correlation when invoking a handler from the mapped dictionary:
+      // `Handlers` is only a bound type parameter here, so the call is typed against
+      // its `MatchHandlers` constraint (return `unknown`), not the caller's concrete
+      // `Handlers`. This is a TypeScript limitation on generic property access, not a
+      // design gap; no cast-free formulation was found (see PR/commit notes).
       return dispatch(result, handlers) as ReturnType<Handlers[DistributionShape]>;
     },
   };

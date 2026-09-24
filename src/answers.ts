@@ -1,4 +1,4 @@
-import { analyze } from './analysis.ts';
+import { analyze, analyzeExtended } from './analysis.ts';
 import type { Distribution, OptionKeys, Options } from './model.ts';
 import { InputIssue, object, probability, text } from './validation.ts';
 
@@ -123,18 +123,26 @@ export function readAnswer(
     }
     return { kind: 'unavailable', reason: 'distribution-not-provided', raw };
   }
-  const distribution = analyze(answer.probabilities, options);
   if (answer.type === 'choice') {
     const choice = text(answer.choice, 'choice');
-    if (!distribution.maxima.some((item) => item.option === choice)) {
+    // Built in one step so is()/match() close over this exact, already-complete answer
+    // rather than a Distribution that gets fields bolted onto it after analyze() returns it.
+    const choiceAnswer = analyzeExtended(answer.probabilities, options, {
+      type: 'choice' as const,
+      choice,
+      confidence,
+      raw,
+    });
+    if (!choiceAnswer.maxima.some((item) => item.option === choice)) {
       throw new InputIssue(
         ['choice'],
         'inconsistent-answer',
         'choice must be a highest-probability option',
       );
     }
-    return Object.assign(distribution, { type: 'choice' as const, choice, confidence, raw });
+    return choiceAnswer;
   }
+  const distribution = analyze(answer.probabilities, options);
   const legend = readLegend(answer.legend);
   const levelCount = Object.keys(legend).length;
   if (
