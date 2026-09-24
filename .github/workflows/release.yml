@@ -32,12 +32,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -60,17 +60,38 @@ jobs:
       - name: Create Release PR or Publish
         id: changesets
         # changesets/action still owns the version-PR half (accumulating
-        # changesets into a "chore: version packages" PR). Its GitHub-release
-        # creation is driven by "New tag: ..." lines printed by `changeset
-        # publish`; `npm run release` no longer calls that (it stages
-        # instead, via scripts/stage-release.mjs) and deliberately prints no
-        # such line, so this step never creates a tag or GitHub release. A
-        # release/tag is not automatic anymore — see docs/release-policy.md.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        # changesets into a "chore: version packages" PR).
+        #
+        # v2.0.0 renamed the v1 inputs we use: version -> version-script,
+        # publish -> publish-script, commit -> commit-message,
+        # title -> pr-title. Keeping the old v1 names would not error — v2
+        # just ignores unknown `with:` keys — it would silently fall back to
+        # `changeset publish` as the default publish step (a no-op here,
+        # since we don't call `changeset publish` from npm scripts) and this
+        # job would never run `npm run release`, so nothing would ever stage.
+        #
+        # v2 also defaulted `create-github-releases` and `push-git-tags` to
+        # `true`, decoupled from any "New tag: ..." string in the publish
+        # step's output. `npm run release` stages via
+        # scripts/stage-release.mjs rather than publishing, so a tag or
+        # GitHub release here would announce a version before a maintainer
+        # has approved the stage with 2FA — see docs/release-policy.md. Both
+        # are pinned `false` explicitly rather than relied on to be inferred
+        # from the script's behavior.
+        #
+        # v2 defaults to pushing release commits/tags via the GitHub API
+        # instead of the Git CLI (push-with-git-cli: false); the job's
+        # existing `contents: write` + `pull-requests: write` permissions
+        # already cover that. v2 also stopped reading the GITHUB_TOKEN env
+        # var for its own auth (a custom token must go through the
+        # `github-token` input) — the action defaults to the
+        # GitHub-provided token, which is what this job wants, so that env
+        # var is dropped rather than kept as dead config.
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          version: npm run version-packages
-          publish: npm run release
-          title: "chore: version packages"
-          commit: "chore: version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          version-script: npm run version-packages
+          publish-script: npm run release
+          pr-title: "chore: version packages"
+          commit-message: "chore: version packages"
+          create-github-releases: false
+          push-git-tags: false
