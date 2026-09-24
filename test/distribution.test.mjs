@@ -94,6 +94,28 @@ test('custom shortlist does not silently redefine shape profile', () => {
   assert.equal(result.profile.prominenceRatio, 0.4);
 });
 
+test('summation-order float noise is not reported as normalization', () => {
+  // 0.1 + 0.2 + 0.7 sums to 0.9999999999999999 in IEEE 754 double precision: the
+  // caller's data was already normalized, and the drift is round-off, not signal.
+  const result = analyze({ a: 0.1, b: 0.2, c: 0.7 });
+  assert.notEqual(result.input.total, 1);
+  assert.equal(result.input.normalized, false);
+});
+
+test('the normalized flag is reported strictly beyond its declared tolerance, on both sides', () => {
+  const tolerance = analyze({ a: 1 }).profile.numericTolerances.normalizedAbsolute;
+  for (const scale of [0.5, 1, 2]) {
+    const input = { a: 0.6, b: 0.4 + scale * tolerance };
+    const total = input.a + input.b;
+    const result = analyze(input);
+    assert.equal(result.input.total, total, `scale=${scale}`);
+    assert.equal(result.input.normalized, Math.abs(total - 1) > tolerance, `scale=${scale}`);
+    // Rescaling always runs, regardless of whether the drift is reported: probabilities
+    // are consistently normalized to the observed total either way.
+    assert.equal(result.sorted[0].probability, input.a / total, `scale=${scale}`);
+  }
+});
+
 test('small floating point drift is reported; malformed mass is rejected', () => {
   assert.equal(analyze({ a: 0.7, b: 0.300000001 }).input.normalized, true);
   for (const value of [

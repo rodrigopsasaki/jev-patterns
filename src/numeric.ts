@@ -3,6 +3,7 @@ export const numericTolerances = Object.freeze({
   tieAbsolute: 1e-12,
   thresholdRelative: 1e-12,
   massBoundaryAbsolute: 1e-12,
+  normalizedAbsolute: 1e-12,
 });
 
 export function atLeast(actual: number, threshold: number): boolean {

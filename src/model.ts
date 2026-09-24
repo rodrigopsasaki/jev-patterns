@@ -79,6 +79,7 @@ export interface Profile {
     readonly tieAbsolute: number;
     readonly thresholdRelative: number;
     readonly massBoundaryAbsolute: number;
+    readonly normalizedAbsolute: number;
   };
 }
 
@@ -99,8 +100,19 @@ export type ShapeDetails<Option extends string> =
   | { readonly shape: 'flat' }
   | { readonly shape: 'mixed' };
 
-export type MatchHandlers<Option extends string = string> = {
-  readonly [Shape in DistributionShape]: (distribution: DistributionFor<Shape, Option>) => unknown;
+/** A handler's declared return type per shape; defaulted to `unknown` when unconstrained. */
+export type ShapeResults = { readonly [Shape in DistributionShape]: unknown };
+
+/**
+ * Ranging over `keyof R` (rather than the fixed `DistributionShape` union) makes this a
+ * homomorphic mapped type in `R`, so TypeScript's reverse mapped-type inference recovers `R`
+ * from the actual handler object passed to `match()` — the return-type correlation `match()`
+ * needs, without a cast (see `Distribution.match`).
+ */
+export type MatchHandlers<Option extends string = string, R extends ShapeResults = ShapeResults> = {
+  readonly [Shape in keyof R]: (
+    distribution: DistributionFor<Shape & DistributionShape, Option>,
+  ) => R[Shape];
 };
 
 export type DistributionFor<
@@ -115,7 +127,5 @@ export type Distribution<Option extends string = string> = DistributionData<Opti
     /** Structural tests can overlap and do not change the assigned shape. */
     is(predicate: Predicate): boolean;
     /** Calls exactly one application-supplied handler; preserves its return value. */
-    match<const Handlers extends MatchHandlers<Option>>(
-      handlers: Handlers,
-    ): ReturnType<Handlers[DistributionShape]>;
+    match<const R extends ShapeResults>(handlers: MatchHandlers<Option, R>): R[DistributionShape];
   };

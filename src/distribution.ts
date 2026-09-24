@@ -39,7 +39,12 @@ export function measure(input: unknown, options: Options = {}): DistributionData
       entropyNats,
       effectiveOptions: { shannon: Math.exp(entropyNats), simpson: 1 / concentration },
     },
-    input: { total, normalized: total !== 1 },
+    // Summation-order float drift (e.g. 0.1 + 0.2 + 0.7) can leave `total` a few ULPs
+    // off 1 without the caller's data actually being unnormalized; only report
+    // normalization once the drift exceeds the declared tolerance. Rescaling below
+    // still runs unconditionally: dividing by a total within noise of 1 is a no-op in
+    // practice, and a single code path avoids a second, untested branch.
+    input: { total, normalized: Math.abs(total - 1) > numericTolerances.normalizedAbsolute },
   };
 }
 

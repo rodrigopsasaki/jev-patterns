@@ -107,6 +107,28 @@ test('Jev contract: Choice preserves point masses, zero entries, and confidence 
   }
 });
 
+test('Jev contract: a Choice answer is built without mutating a previously finished Distribution', () => {
+  const result = parse(response({ q: choice() })).answers.q;
+  // is()/match() must close over the returned ChoiceAnswer itself, not a plain
+  // Distribution that later had `type`/`choice`/`confidence`/`raw` bolted onto it:
+  // the handler's argument, by reference, is the exact object the caller holds.
+  const received = result.match({
+    dominant: (d) => d,
+    paired: (d) => d,
+    split: (d) => d,
+    clustered: (d) => d,
+    flat: (d) => d,
+    mixed: (d) => d,
+  });
+  assert.equal(received, result);
+  assert.equal(received.type, 'choice');
+  assert.equal(received.choice, 'a');
+  assert.equal(
+    result.is((d) => d.choice === 'a'),
+    true,
+  );
+});
+
 test('Jev contract: either exact maximum can remain the provider Choice', () => {
   for (const selected of ['a', 'z']) {
     const result = parse(
