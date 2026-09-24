@@ -4,6 +4,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # typescript-floor is a deliberate npm alias (npm:typescript@5.9.3) that
+      # pins the package's claimed consumer TypeScript floor and is
+      # CI-verified against it (docs/release-policy.md, docs/testing.md).
+      # Dependabot must never bump it: raising the floor is a conscious
+      # decision recorded in docs/release-policy.md, not an automated update.
+      # GitHub's docs do not document whether dependency-name matches an npm
+      # alias key or its underlying package name, so this ignores the alias
+      # key as it appears in package.json; the real `typescript`
+      # devDependency is intentionally left unignored so it keeps updating.
+      - dependency-name: "typescript-floor"
   - package-ecosystem: github-actions
     directory: /
     schedule:
