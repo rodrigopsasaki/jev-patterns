@@ -79,6 +79,7 @@ export interface Profile {
     readonly tieAbsolute: number;
     readonly thresholdRelative: number;
     readonly massBoundaryAbsolute: number;
+    readonly normalizedAbsolute: number;
   };
 }
 

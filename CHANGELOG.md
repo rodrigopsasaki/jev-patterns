@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Report `input.normalized` only once a distribution's total differs from 1 beyond a new, declared `normalizedAbsolute` tolerance (1e-12), surfaced under `profile.numericTolerances`. Summation-order float noise (e.g. `analyze({ a: 0.1, b: 0.2, c: 0.7 })`) no longer reports normalization; deliberate drift within the existing 1e-8 input-sum tolerance still does. Rescaling remains unconditional. `descriptive-v2` shape thresholds and precedence are unchanged.
+
 ## 0.2.0 — 2026-09-23
 
 - Publish the first npm package, including the answer-inspection API, compiled ESM, declarations, and README assets. Install with `npm install jev-patterns`. The earlier v0.1.0 release remains GitHub-only.
