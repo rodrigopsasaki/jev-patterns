@@ -7,11 +7,11 @@
 ![TypeScript: typed API](assets/badges/typescript.svg)
 ![Runtime dependencies: zero](assets/badges/dependencies.svg)
 
-**Give a probability distribution a vocabulary. Keep its meaning in context.**
+**Describe a probability distribution honestly. Decide what to do about it in your own code.**
 
-Turn Jev responses into recognizable shapes, typed observations, and application code you can read. Describe concentration, preserve alternatives, and decide what to do in your own code.
+Turn Jev responses into typed observations and application code you can read: concentration, alternatives, and a ranked list, with option names preserved as a TypeScript literal union throughout.
 
-Independent TypeScript library. ESM. No runtime dependencies or network calls. **v0.2.0** includes individual-answer inspection and is the first npm release. The API and thresholds remain provisional.
+Independent TypeScript library. ESM. No runtime dependencies or network calls. This revision (v0.3.0, unreleased) removes the six named distribution shapes and adds `rank()`; see [why](#why-v03-removed-the-named-shapes) below. The API and thresholds remain provisional.
 
 ## Start with the whole distribution
 
@@ -28,8 +28,8 @@ const distribution = analyze({
   other: 0.01,
 });
 
-distribution.shape;                       // 'split'
 distribution.first.option;                // 'password_reset'
+distribution.maximumProbability;          // 0.51
 distribution.gap;                         // approximately 0.06
 distribution.metrics.firstTwoProbability; // 0.96
 distribution.prominent.count;             // 2 prominent alternatives
@@ -53,7 +53,7 @@ const inspected = inspectAnswer({
 });
 
 if (inspected.kind === 'available') {
-  inspected.answer.shape;       // 'split'
+  inspected.answer.maximumProbability; // 0.51
   inspected.answer.prominent;   // S1 and S2, with their probabilities
   inspected.answer.confidence;  // null: provider confidence was unavailable
   inspected.answer.first.option; // typed as 'S1' | 'S2' | 'none'
@@ -67,24 +67,25 @@ if (inspected.kind === 'available') {
 | `unavailable` | A Choice or Score omitted its distribution or supplied `null`; `.raw` preserves the supplied answer. |
 | `invalid` | The supplied data cannot be interpreted; `.issues` provides structured paths, codes, and messages. |
 
-Missing confidence becomes `null` in the inspected view. It never borrows a number from the distribution. Noul keeps `.yes`, `.no`, and `.distribution`; Score keeps `.score`, `.confidence`, `.legend`, and `.distribution`. Choice exposes the distribution directly, including `.is()` and `.match()`.
+Missing confidence becomes `null` in the inspected view. It never borrows a number from the distribution. Noul keeps `.yes`, `.no`, and `.distribution`; Score keeps `.score`, `.confidence`, `.legend`, and `.distribution`. Choice exposes the distribution directly, including `.is()`.
 
 `parse(response)` remains strict about Jev's full wire response. `analyze(probabilities)` remains the direct probability-map API. All three share the same descriptive rules. Expected input problems become inspection outcomes; invalid options and exceptions from executable inputs such as throwing getters still throw. See the [individual-answer contract](docs/answer-inspection.md) and [batch example](examples/answer-batch.ts).
 
-## Six ways probability can be distributed
+## Why v0.3 removed the named shapes
 
-![Six distribution shapes, with each bar on the same 0–100 percent scale. Exact values and descriptions follow.](assets/distributions.svg)
+Earlier versions classified a distribution into one of six named shapes (`dominant`, `paired`, `split`, `clustered`, `flat`, `mixed`) and dispatched on that label with `match()`. A board evaluated that vocabulary against 356 labeled judge answers (Jev plus two local judges) and found it added no information about a top answer's correctness beyond `maximumProbability` alone:
 
-| Shape | Example (%) | What it describes |
-| --- | --- | --- |
-| `dominant` | 91 / 5 / 3 / 1 | Most probability sits on one outcome. |
-| `paired` | 64 / 25 / 7 / 4 | Two substantial, unequal shares. |
-| `split` | 51 / 45 / 3 / 1 | Two substantial, similar shares. |
-| `clustered` | 41 / 34 / 22 / 3 | Several outcomes hold most of the probability. |
-| `flat` | 28 / 26 / 24 / 22 | Similar probabilities across positive support. |
-| `mixed` | 60 / 10 / 10 / 10 / 10 | No named pattern matches the current profile. |
+- `dominant` at its default floor (`0.8`) is *exactly* the predicate `maximumProbability >= 0.8` — bin purity 1.0, not a discovered pattern.
+- `paired`'s apparent "the runner-up is worth checking" signal is fully reproduced by a shape-agnostic `maximumProbability` band: for `0.5 <= maximumProbability < 0.8`, the top answer alone is correct 66% of the time, versus 93% for the top two (n=61) — the same lift `paired` claims to add.
+- `clustered`, at its defaults, is itself the predicate `prominent.count >= 3 && prominent.probability >= 0.75` — again a restatement of scalars already on the distribution, not new signal.
+- `flat` never occurred in the 356-answer corpus.
+- `maximumProbability`, `gap`, and entropy predicted correctness about equally well (AUROC ≈ .79–.80) — and only for a *validated* judge model. One of the two local judges was at chance, so that number is not universal.
 
-These are descriptive heuristics over the supplied probabilities. `mixed` makes room for distributions the vocabulary does not capture. The actual probabilities, ties, and remaining mass stay available under every shape.
+With five of six shapes carrying no demonstrated value and the sixth (`mixed`) an explicit non-classification, there was nothing left for the discriminant to classify, so v0.3 removes `.shape`, `match()`, and the whole classification layer, rather than deprecating it. `Distribution` is now its observations (below) plus `.is(predicate)`. The predicate factories (`dominant`, `paired`, `split`, `clustered`, `flat`) survive as opt-in structural tests with unchanged defaults — see [Structural predicates](#express-a-structural-policy-with-no-assumed-predictive-value) below — because a caller who validates one against their own labeled data may still find it useful; the library just no longer claims that value for them.
+
+## Observations, not a verdict
+
+`analyze()` and `parse()` return the same observations regardless of shape: `first`/`second`/`maxima` (rank and ties), `gap`, `maximumProbability`, `prominent` (a configurable shortlist), `massSet` (a mass-target shortlist), and `metrics` (entropy and effective-option counts). None of them selects an outcome or claims correctness; they describe the geometry Jev returned, and your application code reads the ones it needs.
 
 ## The question changes the interpretation
 
@@ -106,7 +107,7 @@ This follows Jev's documented [Choice](https://docs.typesafe.ai/primitives/choic
 
 ### Ask a useful follow-up
 
-In a support UI, map the shape to a view. For a split result, offer the two main explanations as clarification options. These handlers define this application's behavior; the library calls exactly one.
+In a support UI, read the observations your application actually needs and decide the view yourself. Here, a single clear leader gets a direct suggestion; two close contenders get a clarifying question; anything more spread out asks for more detail.
 
 <!-- example:support -->
 ```ts
@@ -119,20 +120,18 @@ const issue = analyze({
   other: 0.01,
 });
 
-const view = issue.match({
-  dominant: (d) => ({ kind: 'suggest', option: d.uniqueMaximum.option } as const),
-  paired: (d) => ({ kind: 'compare', options: d.pair.map((x) => x.option) } as const),
-  split: (d) => ({ kind: 'clarify', options: d.pair.map((x) => x.option) } as const),
-  clustered: (d) => ({ kind: 'choose-topic', options: d.prominent.items.map((x) => x.option) } as const),
-  flat: () => ({ kind: 'ask-for-details' } as const),
-  mixed: () => ({ kind: 'manual-review' } as const),
-});
+const view =
+  issue.maximumProbability >= 0.8
+    ? ({ kind: 'suggest', option: issue.first.option } as const)
+    : issue.prominent.count === 2
+      ? ({ kind: 'clarify', options: issue.prominent.items.map((x) => x.option) } as const)
+      : ({ kind: 'ask-for-details' } as const);
 
 // { kind: 'clarify', options: ['password_reset', 'account_locked'] }
 // A UI can now ask: “Do you need to reset your password, or is your account locked?”
 ```
 
-Every shape is required. Each callback receives a narrowed type: `dominant` has a non-null `uniqueMaximum`; `paired` and `split` have a two-item `pair`. The return type is the union of your view objects. Promises and exceptions are preserved too.
+The thresholds (`0.8`, a prominent count of `2`) are this application's own policy, stated in its own code — not a name the library assigned to the distribution. Change them freely; nothing here reclassifies anything.
 
 ### Fetch a shortlist before answering
 
@@ -183,15 +182,29 @@ const suggestedLabels = Object.entries(response.answers)
   .map(([label]) => label);
 // ['billing', 'refund']
 
-response.answers.billing.distribution.shape; // 'dominant', toward yes
-response.answers.login.distribution.shape;   // 'dominant', toward no
+response.answers.billing.distribution.maximumProbability; // 0.94, toward yes
+response.answers.login.distribution.maximumProbability;   // 0.92, toward no
 ```
 
-Both the strong yes and the strong no are concentrated. **Use `.yes` to suggest a label; `dominant` alone does not tell you the direction.** Each Noul retains `.yes`, `.no`, and its own binary `.distribution`. There is no combined shape for this collection of labels in v0.
+Both the strong yes and the strong no are concentrated. **Use `.yes` to suggest a label; a high `maximumProbability` alone does not tell you the direction.** Each Noul retains `.yes`, `.no`, and its own binary `.distribution`. There is no combined observation for this collection of labels in v0.
 
-### Express a more specific policy
+### Rank options, excluding a catch-all label
 
-Shapes are useful shorthand. Predicates let you state your application's requirements directly:
+The first real consumer of this library never branched on a distribution's shape at all — it only ever compared a scalar to a floor, and separately hand-rolled "rank the options, excluding a catch-all or none-sentinel, then take the top one" twice. `rank()` is that one primitive:
+
+<!-- example:ranking -->
+```ts
+import { rank } from 'jev-patterns';
+
+const probabilities = { password_reset: 0.51, account_locked: 0.45, other: 0.04 };
+const topCause = rank(probabilities, { exclude: ['other'], limit: 1 })[0];
+```
+
+`rank()` shares `analyze()`'s validation and deterministic tie order. It does not renormalize after exclusion: the remaining entries keep their original model probability, exclusion just filters which entries appear. There is no separate "top-1 excluding X" helper; that is `rank(p, { exclude, limit: 1 })[0]`. With a typed probability map, excluding a literal option name outside its keys is a compile error, not a silent no-op; an untyped map has no closed vocabulary to check an excluded label against, so an absent label is silently ignored.
+
+### Express a structural policy with no assumed predictive value
+
+The predicate factories below (`dominant`, `paired`, `split`, `clustered`, `flat`) are structural tests over a distribution's shape. **They have no demonstrated predictive value for answer correctness on their own** — see [why](#why-v03-removed-the-named-shapes) above. If you want to gate a real decision on one, validate it against your own labeled data first.
 
 <!-- example:predicates -->
 ```ts
@@ -202,7 +215,7 @@ const routingPolicy = allOf(dominant({ floor: 0.9 }), gapAtLeast(0.3));
 const meetsRoutingPolicy = route.is(routingPolicy); // true
 ```
 
-Predicates are ordinary functions. Compose them with `allOf`, `anyOf`, and `not`, or supply your own. They can overlap, and changing a predicate does not relabel the distribution. These cutoffs are an example policy to evaluate against the costs of incorrect routing.
+Predicates are ordinary functions. Compose them with `allOf`, `anyOf`, and `not`, or supply your own. They can overlap, and applying one never relabels the distribution — there is no label to change. These cutoffs are an example policy to evaluate against the costs of incorrect routing before trusting it.
 
 ## Connect a Jev response
 
@@ -210,37 +223,37 @@ Replace a synthetic response with your decoded API result: `const response = par
 
 | Answer kind | What `parse()` exposes |
 | --- | --- |
-| Choice | Shape, measurements, `.match()` and `.is()` directly on the answer, alongside the original `.choice`, `.confidence`, and `.raw`. |
+| Choice | Observations and `.is()` directly on the answer, alongside the original `.choice`, `.confidence`, and `.raw`. |
 | Noul | `.yes`, `.no`, and the yes/no view under `.distribution`. |
 | Score | Level legend, provider score/confidence, `.expectedLevel`, and the categorical view under `.distribution`. |
 
 With typed input, known question IDs, answer kinds, and option names survive parsing. With unknown JSON or an open dictionary, check for a missing answer and narrow its kind before use. Invalid input throws a `TypeError`. Input is preserved, including raw snapshots and provider metadata.
 
-Score levels are ordered. A categorical shape by itself cannot distinguish probability on adjacent levels from probability on distant levels; retain the legend and inspect the levels for that use case.
+Score levels are ordered. A categorical view by itself cannot distinguish probability on adjacent levels from probability on distant levels; retain the legend and inspect the levels for that use case.
 
-## What v0 includes
+## What v0.3 includes
 
 | API | Purpose |
 | --- | --- |
 | `analyze(probabilities, options?)` | Describe one normalized probability map. Values must be in `[0, 1]` and sum to 1 within the reported tolerance. |
 | `parse(response, options?)` | Validate decoded Jev JSON and add typed distribution views. |
-| `.match(handlers)` | Map all six shapes to your application's values or actions. |
 | `.is(predicate)` | Test structure using a supplied function. |
 | `massSet(probabilities, targetMass)` | Keep a ranked prefix reaching a requested mass within numeric tolerance, retaining boundary ties. |
+| `rank(probabilities, options?)` | Order options by probability; optionally `exclude` labels and `limit` to the top N, without renormalizing. |
 
-`sorted`, `first`, `second`, `maxima`, `uniqueMaximum`, and `gap` expose rank and ties. Sorting tied entries never creates a unique maximum. `prominent` groups positive-probability outcomes at least a configurable fraction of the maximum, within numeric tolerance; `massSet` groups by accumulated mass.
+`sorted`, `first`, `second`, `maxima`, `uniqueMaximum`, and `gap` expose rank and ties. Sorting tied entries never creates a unique maximum. `prominent` groups positive-probability outcomes at least a configurable fraction of the maximum, within numeric tolerance; `massSet` groups by accumulated mass; `rank` returns the same deterministic order as a plain list, optionally filtered and truncated.
 
 `metrics.effectiveOptions` provides Shannon and Simpson effective counts: how spread out this one distribution is, expressed on the scale of equally weighted alternatives. It does **not** estimate how many answers are true or how many labels apply. `prominent.count` is also a descriptive count, not a validity count.
 
-The applied heuristics and numerical tolerances are recorded under `.profile` (`descriptive-v2`). Thresholds remain provisional. Changes to classification semantics require a new profile version. Multi-label aggregation, calibration, and ordinal distance analysis remain outside the current API.
+The applied numerical tolerances are recorded under `.profile` (`descriptive-v3`). The structural predicates' own default thresholds (`dominant`'s floor, and so on) live next to each predicate factory in `src/predicates.ts`, not on `.profile`: with no classification decision left to version, they are the predicates' own opt-in parameters. Multi-label aggregation, calibration, and ordinal distance analysis remain outside the current API.
 
 Explore the [public types](src/model.ts), [design](docs/proposal.md), and [examples](examples/shapes.ts) in the repository. Development files are excluded from the package archive.
 
 ## Looking ahead: task verbs
 
-The next layer could expose verbs such as `classify`, `detect`, `label`, `rank`, `retrieve`, and `verify`. Each would wrap Jev calls with an inspectable, versioned task recipe: useful defaults you can adopt, configure, or recreate. An optional receipt would accompany the task result with the questions, observed responses and policy rules that produced it.
+The next layer could expose verbs such as `classify`, `detect`, `label`, `retrieve`, and `verify`, and a fuller `rank` verb that wraps its own Jev calls with a tie/cycle policy (a different, larger thing from v0.3's `rank()` primitive above). Each would wrap Jev calls with an inspectable, versioned task recipe: useful defaults you can adopt, configure, or recreate. An optional receipt would accompany the task result with the questions, observed responses and policy rules that produced it.
 
-This is a V2 design direction, not an available v0 API. The key boundary is a pure interpreter shared by wrapped calls and saved responses; distribution shapes remain observations underneath the task policy. See the [task recipe proposal](docs/task-recipes.md) in the repository for example signatures, receipt semantics and the seams v0 keeps open.
+This is a V2 design direction, not an available v0 API. The key boundary is a pure interpreter shared by wrapped calls and saved responses; distribution observations remain available underneath the task policy. See the [task recipe proposal](docs/task-recipes.md) in the repository for example signatures, receipt semantics and the seams v0 keeps open.
 
 ## Install
 
