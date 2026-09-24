@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
-import { rank } from '../src/distribution.ts';
+import { analyze } from '../src/analysis.ts';
+import { massSet, rank } from '../src/distribution.ts';
 
 const probabilities = { a: 0.42, b: 0.41, c: 0.1, d: 0.07 };
 
@@ -84,8 +85,47 @@ test('limit rejects non-positive-safe-integer values the same way other validate
   }
 });
 
-test('rank rejects malformed probability input exactly as analyze does', () => {
-  for (const value of [{}, { a: 0 }, { a: 97, b: 3 }, { a: -0.1, b: 1.1 }, { a: NaN }, [], null]) {
+test('rank rejects per-value violations exactly as analyze does, even though it no longer requires a total', () => {
+  for (const value of [{ a: 97, b: 3 }, { a: -0.1, b: 1.1 }, { a: NaN }, { a: '1' }, [], null]) {
     assert.throws(() => rank(value), TypeError);
   }
+});
+
+test('rank on an empty map returns an empty ranking, not an error', () => {
+  assert.deepEqual(rank({}), []);
+});
+
+test('rank orders unnormalized judge estimates and returns their values unchanged', () => {
+  const underNormalized = { a: 0.5, b: 0.3, c: 0.13 }; // sums to 0.93
+  assert.deepEqual(rank(underNormalized), [
+    { option: 'a', probability: 0.5 },
+    { option: 'b', probability: 0.3 },
+    { option: 'c', probability: 0.13 },
+  ]);
+
+  const overNormalized = { a: 0.7, b: 0.4, c: 0.25 }; // sums to 1.35
+  assert.deepEqual(rank(overNormalized), [
+    { option: 'a', probability: 0.7 },
+    { option: 'b', probability: 0.4 },
+    { option: 'c', probability: 0.25 },
+  ]);
+});
+
+test('exclude/limit/tie behavior on an unnormalized map matches the normalized case', () => {
+  const unnormalized = { billing: 0.6, refund: 0.5, other: 0.3, z: 0.3 }; // sums to 1.7, refund/other/z tied-ish
+  assert.deepEqual(rank(unnormalized, { exclude: ['other'], limit: 2 }), [
+    { option: 'billing', probability: 0.6 },
+    { option: 'refund', probability: 0.5 },
+  ]);
+  const tiedUnnormalized = { z: 0.3, m: 0.3, a: 0.3 }; // sums to 0.9, all tied
+  assert.deepEqual(
+    rank(tiedUnnormalized).map((item) => item.option),
+    ['a', 'm', 'z'],
+  );
+});
+
+test('regression: analyze and massSet still reject a 0.93-sum map (the split did not loosen them)', () => {
+  const underNormalized = { a: 0.5, b: 0.3, c: 0.13 };
+  assert.throws(() => analyze(underNormalized), TypeError);
+  assert.throws(() => massSet(underNormalized, 0.8), TypeError);
 });
