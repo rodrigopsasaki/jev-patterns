@@ -32,12 +32,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -66,11 +66,18 @@ jobs:
         # instead, via scripts/stage-release.mjs) and deliberately prints no
         # such line, so this step never creates a tag or GitHub release. A
         # release/tag is not automatic anymore — see docs/release-policy.md.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        #
+        # v2 defaults to pushing release commits/tags via the GitHub API
+        # instead of the Git CLI (push-with-git-cli: false); the job's
+        # existing `contents: write` + `pull-requests: write` permissions
+        # already cover that. v2 also stopped reading the GITHUB_TOKEN env
+        # var for its own auth (a custom token must go through the
+        # `github-token` input) — the action defaults to the
+        # GitHub-provided token, which is what this job wants, so that env
+        # var is dropped rather than kept as dead config.
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           version: npm run version-packages
           publish: npm run release
           title: "chore: version packages"
           commit: "chore: version packages"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
