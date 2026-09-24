@@ -1,6 +1,6 @@
 # jev-patterns
 
-[![Status: v0.2.0 experimental](assets/badges/status.svg)](https://github.com/rodrigopsasaki/jev-patterns/releases/tag/v0.2.0)
+[![Status: experimental](assets/badges/status.svg)](https://www.npmjs.com/package/jev-patterns)
 [![CI](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rodrigopsasaki/jev-patterns/actions/workflows/ci.yml)
 [![License: MIT](assets/badges/license.svg)](LICENSE)
 ![Node: 24.14 or newer](assets/badges/node.svg)
