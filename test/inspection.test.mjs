@@ -60,6 +60,20 @@ test('inspection: a Choice is usable without an envelope or invented provenance'
   }
 });
 
+test('inspection: a Choice whose wire-rounded probabilities sum to 0.99 is available, not invalid', () => {
+  // Reproduces the two-decimal wire-rounding pattern of a real Jev response: each value is
+  // a valid rounded probability, but the sum lands a cent off 1. Synthetic fixture.
+  const input = choice({
+    choice: 'adjacent',
+    probabilities: { exact: 0.05, adjacent: 0.93, combination: 0.01 },
+  });
+  const result = inspectAnswer(input);
+  assert.equal(result.kind, 'available');
+  assert.equal(result.answer.choice, 'adjacent');
+  assert.ok(Math.abs(result.answer.input.total - 0.99) < 1e-9);
+  assert.equal(result.answer.input.normalized, true);
+});
+
 test('inspection: is() closes over the returned answer and preserves the predicate result', () => {
   const result = inspectAnswer(choice());
   assert.equal(result.kind, 'available');
@@ -198,7 +212,7 @@ test('inspection: malformed maps, totals, and entries are distinct', () => {
   for (const probabilities of ['map', 1, false, []]) {
     invalid(choice({ probabilities }), ['probabilities'], 'invalid-type');
   }
-  for (const probabilities of [{}, { a: 0 }, { a: 0.99 }, { a: 1, b: 1 }]) {
+  for (const probabilities of [{}, { a: 0 }, { a: 0.6, b: 0.3 }, { a: 1, b: 1 }]) {
     invalid(choice({ probabilities }), ['probabilities'], 'invalid-total');
   }
   for (const name of ['__proto__', 'constructor', '', 'quoted"\n]name', '🧪']) {

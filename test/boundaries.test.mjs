@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'vitest';
 import { analyze } from '../src/analysis.ts';
-import { massSet } from '../src/distribution.ts';
+import { massSet, rank } from '../src/distribution.ts';
 import {
   clustered,
   dominant,
@@ -301,6 +301,58 @@ test('accepted sum drift is normalized and its represented boundary is enforced 
     }
   }
   assert.deepEqual(analyze({ a: 0.75, b: 0.25 }).input, { total: 1, normalized: false });
+});
+
+test('synthetic Jev-wire-rounding fixtures (values rounded to two decimals) are accepted', () => {
+  // A real Jev response rounds each option's probability to two decimals before it is
+  // serialized, so the sum commonly lands a cent off 1 even though every value is a valid
+  // wire-rounded probability. These fixtures reproduce that pattern; none is a captured
+  // real response.
+  const threeOption = { exact: 0.05, adjacent: 0.93, combination: 0.01 }; // sums to 0.99
+  const threeOptionResult = analyze(threeOption);
+  assert.ok(Math.abs(threeOptionResult.input.total - 0.99) < 1e-9);
+  assert.equal(threeOptionResult.input.normalized, true);
+  assert.equal(threeOptionResult.maximumProbability, 0.93 / threeOptionResult.input.total);
+
+  const sevenOption = {
+    a: 0.42,
+    b: 0.3,
+    c: 0.1,
+    d: 0.08,
+    e: 0.05,
+    f: 0.03,
+    g: 0.01,
+  }; // sums to 0.99
+  assert.equal(analyze(sevenOption).input.total, 0.99);
+
+  // A many-option answer (~200 options) where only a handful carry non-negligible,
+  // two-decimal-rounded probability and the rest round to exactly 0. Drift stays at 0.01
+  // regardless of option count, which is why the tolerance is a fixed constant rather than
+  // one that scales with the number of options.
+  const manyOption = { top: 0.87, second: 0.11, third: 0.01 };
+  for (let index = 0; index < 197; index += 1) manyOption[`option-${index}`] = 0;
+  const manyOptionResult = analyze(manyOption);
+  assert.equal(Object.keys(manyOption).length, 200);
+  assert.equal(manyOptionResult.input.total, 0.99);
+  assert.equal(manyOptionResult.input.normalized, true);
+});
+
+test('massSet and rank operate on a wire-rounding-drifted map exactly as on an exact one', () => {
+  const drifted = { exact: 0.05, adjacent: 0.93, combination: 0.01 }; // sums to 0.99
+  const exact = { exact: 0.05, adjacent: 0.94, combination: 0.01 }; // sums to 1
+  const driftedSet = massSet(drifted, 0.9);
+  const exactSet = massSet(exact, 0.9);
+  assert.deepEqual(
+    driftedSet.options.map((item) => item.option),
+    exactSet.options.map((item) => item.option),
+  );
+  assert.equal(driftedSet.count, 1);
+
+  const driftedRank = rank(drifted, { exclude: ['combination'] });
+  assert.deepEqual(
+    driftedRank.map((item) => item.option),
+    ['adjacent', 'exact'],
+  );
 });
 
 test('numeric parameter validation rejects malformed values across every factory and analysis option', () => {
