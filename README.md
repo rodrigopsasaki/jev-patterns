@@ -11,7 +11,7 @@
 
 Turn Jev responses into typed observations and application code you can read: concentration, alternatives, and a ranked list, with option names preserved as a TypeScript literal union throughout.
 
-Independent TypeScript library. ESM. No runtime dependencies or network calls. This revision (v0.3.0, unreleased) removes the six named distribution shapes and adds `rank()`; see [why](#why-v03-removed-the-named-shapes) below. The API and thresholds remain provisional.
+Independent TypeScript library. ESM. No runtime dependencies or network calls. v0.3 removed the six named distribution shapes and added `rank()`; see [why](#why-v03-removed-the-named-shapes) below. The API and thresholds remain provisional.
 
 ## Start with the whole distribution
 
