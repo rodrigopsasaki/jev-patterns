@@ -65,7 +65,7 @@ export interface Profile {
   readonly prominenceRatio: number;
   readonly targetMass: number;
   readonly numericTolerances: {
-    readonly wireRoundingAbsolute: number;
+    readonly inputSumAbsolute: number;
     readonly tieAbsolute: number;
     readonly thresholdRelative: number;
     readonly massBoundaryAbsolute: number;

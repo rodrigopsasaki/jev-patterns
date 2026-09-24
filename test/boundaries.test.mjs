@@ -282,7 +282,7 @@ test('mass tolerance is inclusive for partial requests and never removes positiv
 });
 
 test('accepted sum drift is normalized and its represented boundary is enforced on both sides of one', () => {
-  const tolerance = analyze({ a: 1 }).profile.numericTolerances.wireRoundingAbsolute;
+  const tolerance = analyze({ a: 1 }).profile.numericTolerances.inputSumAbsolute;
   for (const sign of [-1, 1]) {
     for (const scale of [0.5, 1, 2]) {
       const input = { a: 0.6, b: 0.4 + sign * scale * tolerance };
