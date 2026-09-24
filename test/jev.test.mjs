@@ -18,7 +18,7 @@ const choice = () => ({
 test('choice keeps provider confidence and provenance distinct from analysis', () => {
   const input = response({ route: choice() });
   const result = parse(input);
-  assert.equal(result.answers.route.shape, 'split');
+  assert.equal(result.answers.route.maximumProbability, 0.42);
   assert.equal(result.answers.route.confidence, 0.123);
   assert.deepEqual(result.raw, input);
   input.answers.route.confidence = 1;
@@ -70,7 +70,7 @@ test('missing question ids never resolve inherited prototype members', () => {
   const result = parse(response({ route: choice() }));
   for (const key of ['constructor', 'toString', '__proto__', 'missing']) {
     assert.equal(result.answers[key], undefined);
-    assert.equal(result.answers[key]?.shape, undefined);
+    assert.equal(result.answers[key]?.first, undefined);
   }
 });
 
@@ -113,7 +113,7 @@ test('a provider may select either option in an exact tie', () => {
   assert.equal(result.answers.route.uniqueMaximum, null);
 });
 
-test('domain naming is an ordinary match result; choice parsing exposes the same interface', () => {
+test('domain naming reads observations directly; choice parsing exposes the same interface', () => {
   const response = parse({
     model: 'synthetic',
     usage: { input_tokens: 0, output_tokens: 0 },
@@ -126,28 +126,14 @@ test('domain naming is an ordinary match result; choice parsing exposes the same
       },
     },
   });
-  assert.equal(
-    response.answers.ownership.match({
-      dominant: () => 'clear-owner',
-      paired: () => 'secondary-owner',
-      split: () => 'ownership-conflict',
-      clustered: () => 'cross-functional',
-      flat: () => 'no-clear-owner',
-      mixed: () => 'unclassified-ownership',
-    }),
-    'cross-functional',
-  );
+  // The application owns the domain vocabulary; it reads the observations it needs.
+  const owner =
+    response.answers.ownership.maximumProbability >= 0.8
+      ? 'clear-owner'
+      : response.answers.ownership.is(clustered())
+        ? 'cross-functional'
+        : 'unclassified-ownership';
+  assert.equal(owner, 'cross-functional');
   assert.equal(response.answers.ownership.choice, 'platform');
   assert.equal(response.answers.ownership.is(clustered()), true);
-  assert.equal(
-    response.answers.ownership.match(
-      Object.fromEntries(
-        ['dominant', 'paired', 'split', 'clustered', 'flat', 'mixed'].map((shape) => [
-          shape,
-          (d) => d,
-        ]),
-      ),
-    ),
-    response.answers.ownership,
-  );
 });

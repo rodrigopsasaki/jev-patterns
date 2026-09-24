@@ -1,8 +1,8 @@
 # V2 proposal: task verbs, reusable recipes, optional receipts
 
-Status: design sketch, not an implemented API. V0 continues to parse and describe responses. “V2” here names a future product layer; it is unrelated to the existing `descriptive-v2` statistical profile.
+Status: design sketch, not an implemented API. V0 continues to parse and describe responses. “V2” here names a future product layer; it is unrelated to the existing `descriptive-v3` statistical profile.
 
-The [TypeSafe task map](https://docs.typesafe.ai/concepts/use-case-map#example-task-categories) suggests a useful application vocabulary. Our proposal turns that vocabulary into reusable task recipes. These would wrap Jev calls, return task-specific values, and expose their interpretation when requested. They are not additional Jev wire primitives or new distribution shapes.
+The [TypeSafe task map](https://docs.typesafe.ai/concepts/use-case-map#example-task-categories) suggests a useful application vocabulary. Our proposal turns that vocabulary into reusable task recipes. These would wrap Jev calls, return task-specific values, and expose their interpretation when requested. They are not additional Jev wire primitives or new distribution observations.
 
 ## The API someone reaches for
 
@@ -46,9 +46,9 @@ The following return shapes are our design suggestions, not provider API promise
 | `features` | Preserve named semantic measurements for downstream models. | A typed feature map, without forcing boolean decisions. |
 | `extract` | Recover declared fields with field-level provenance. | Values and their supporting source references. |
 
-Start V2 with `classify`, `detect` and their `label` composition. Ranking needs an explicit method and tie/cycle policy; retrieval needs candidate identity and budget semantics. Open-ended field extraction may require a separate extractor before Jev evaluates candidate values. A distribution parser cannot recover arbitrary text fields that were never returned.
+Start V2 with `classify`, `detect` and their `label` composition. This proposed `rank` verb is a full task recipe: it wraps its own Jev calls and needs an explicit method and tie/cycle policy, which is a different thing from v0.3's `rank()` function — a pure, synchronous helper that orders an already-supplied probability map, with no Jev call, method, or cycle policy of its own. The verb could be built on top of the primitive; the primitive does not anticipate the verb. Retrieval needs candidate identity and budget semantics. Open-ended field extraction may require a separate extractor before Jev evaluates candidate values. A distribution parser cannot recover arbitrary text fields that were never returned.
 
-Distribution shape informs these recipes where useful. It is not the task result: a dominant Noul may mean no, a Score has ordered levels, and pairwise rankings can disagree. No universal “highest score” reducer fits all verbs.
+Distribution observations inform these recipes where useful. They are not the task result: a Noul's yes probability can still mean no even when its distribution looks concentrated, a Score has ordered levels, and pairwise rankings can disagree. No universal “highest score” reducer fits all verbs.
 
 ## A recipe is an inspectable default you can replace
 
@@ -149,7 +149,7 @@ Given the exact resolved plan, recorded responses, recipe implementation and ver
 1. Keep `analyze()` and `parse()` deterministic and free of transport concerns. Future verbs can wrap them.
 2. Preserve typed IDs, raw provider values, Noul direction, Score legends, ties and analysis profiles. Recipes need those facts before applying task policies.
 3. Keep `DistributionData` usable independently of matching methods. A later receipt can project a data-only observation without serializing a live result object.
-4. Keep shape thresholds separate from recipe policies and their versions. `descriptive-v2` is not the version of a label-selection or routing policy.
+4. Keep structural predicate defaults separate from recipe policies and their versions. `descriptive-v3` is not the version of a label-selection or routing policy.
 5. Keep receipts at the task/interpretation boundary. Analyzing probabilities does not imply a request was issued or a workflow action was taken.
 6. Keep one-to-many responses possible in the future API. Do not model every task as one question, one response or one confidence scalar.
 

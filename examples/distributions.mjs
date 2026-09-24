@@ -15,11 +15,11 @@ for (const weights of [
     JSON.stringify(
       {
         input: weights,
-        shape: result.shape,
+        maximumProbability: result.maximumProbability,
+        gap: result.gap,
         prominent: result.prominent.items.map((item) => item.option),
         prominentProbability: result.prominent.probability,
         effectiveOptions: result.metrics.effectiveOptions,
-        summary: result.summary,
       },
       null,
       2,

@@ -1,6 +1,6 @@
 export { analyze } from './analysis.ts';
 export type { InspectedAnswer, InspectedChoice, InspectedScore } from './answers.ts';
-export { massSet } from './distribution.ts';
+export { massSet, rank } from './distribution.ts';
 export type {
   InspectableAnswer,
   InspectableChoice,
@@ -25,16 +25,13 @@ export { parse } from './jev.ts';
 export type {
   Distribution,
   DistributionData,
-  DistributionFor,
-  DistributionShape,
   MassSet,
-  MatchHandlers,
   Options,
   Outcome,
   Predicate,
   ProbabilityGroup,
   Profile,
-  ShapeResults,
+  RankOptions,
 } from './model.ts';
 export {
   allOf,

@@ -1,8 +1,20 @@
-import type { Predicate, ShapeThresholds } from './model.ts';
+import type { Predicate } from './model.ts';
 import { atLeast, requireProbability } from './numeric.ts';
 
-/** Provisional descriptive defaults. Version the profile when changing them. */
-export const defaultThresholds: ShapeThresholds = Object.freeze({
+/**
+ * Structural tests over a probability distribution's shape.
+ *
+ * A v0.3 evaluation on 356 labeled judge answers found these named structural patterns
+ * (and the scalar thresholds below) have no demonstrated predictive value for a top
+ * answer's correctness on their own: `dominant({ floor: 0.8 })` is exactly the predicate
+ * `maximumProbability >= 0.8`, `clustered()`'s defaults are exactly a restatement of
+ * `prominent.count >= 3 && prominent.probability >= 0.75`, and the AUROC these scalars did
+ * show (~0.79–0.80) held only for one validated judge model out of two tested. Treat every
+ * default below as an arbitrary, inspectable starting point, not a validated cutoff. A
+ * caller who wants to gate a real decision on one of these predicates should validate it
+ * against their own labeled data first.
+ */
+const defaultThresholds = Object.freeze({
   dominant: Object.freeze({ floor: 0.8, gap: 0.2 }),
   paired: Object.freeze({ floor: 0.5, secondFloor: 0.2, gap: 0.15 }),
   split: Object.freeze({ gap: 0.1, combinedFloor: 0.75 }),

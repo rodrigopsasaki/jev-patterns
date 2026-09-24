@@ -198,7 +198,6 @@ test('prominence and requested mass honor custom values on both sides of a bound
     assert.deepEqual(result.massSet, massSet(input, target));
     assert.equal(result.profile.prominenceRatio, ratio);
     assert.equal(result.profile.targetMass, target);
-    assert.equal(result.shape, analyze(input).shape);
   }
 });
 

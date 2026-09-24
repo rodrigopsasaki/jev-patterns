@@ -37,7 +37,7 @@
     "check:affected": "node scripts/check.mjs --affected",
     "check:full": "node scripts/check.mjs --full",
     "check:plan": "node scripts/check.mjs --changed --plan",
-    "demo": "node examples/shapes.ts",
+    "demo": "node examples/observations.ts",
     "demo:distributions": "node examples/distributions.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.consumer.json",
     "changeset": "changeset",

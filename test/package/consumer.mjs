@@ -11,8 +11,8 @@ const npmCli = process.env.npm_execpath;
 const full = process.env.JEV_PACKAGE_MODE !== 'smoke';
 const readmeAssertions = {
   quickstart: [
-    "assert.equal(distribution.shape, 'split');",
     "assert.equal(distribution.first.option, 'password_reset');",
+    'assert.equal(distribution.maximumProbability, 0.51);',
     'assert.equal(distribution.maxima.length, 1);',
     "assert.equal(distribution.maxima[0].option, 'password_reset');",
     "assert.equal(distribution.uniqueMaximum?.option, 'password_reset');",
@@ -28,23 +28,21 @@ const readmeAssertions = {
   ],
   labels: [
     "assert.deepEqual(suggestedLabels, ['billing', 'refund']);",
-    "assert.equal(response.answers.billing.distribution.shape, 'dominant');",
+    'assert.equal(response.answers.billing.distribution.maximumProbability, 0.94);',
     "assert.equal(response.answers.login.distribution.uniqueMaximum?.option, 'no');",
   ],
+  ranking: ["assert.deepEqual(topCause, { option: 'password_reset', probability: 0.51 });"],
   predicates: ['assert.equal(meetsRoutingPolicy, true);'],
   inspection: [
     "assert.equal(inspected.kind, 'available');",
-    "assert.equal(inspected.answer.shape, 'split');",
+    'assert.equal(inspected.answer.maximumProbability, 0.51);',
     'assert.equal(inspected.answer.confidence, null);',
-    "assert.deepEqual(inspected.answer.pair.map((item) => item.option), ['S1', 'S2']);",
+    "assert.deepEqual([inspected.answer.first.option, inspected.answer.second.option], ['S1', 'S2']);",
   ],
 };
-const readmeAssets = [
-  'assets/distributions.svg',
-  ...['status', 'license', 'node', 'typescript', 'dependencies'].map(
-    (badge) => `assets/badges/${badge}.svg`,
-  ),
-];
+const readmeAssets = ['status', 'license', 'node', 'typescript', 'dependencies'].map(
+  (badge) => `assets/badges/${badge}.svg`,
+);
 
 function extractReadmeExamples(readme) {
   const examples = new Map();
@@ -267,19 +265,20 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
       import * as api from 'jev-patterns';
       assert.deepEqual(Object.keys(api).sort(), [
         'allOf', 'analyze', 'anyOf', 'clustered', 'dominant', 'flat', 'gapAtLeast',
-        'inspectAnswer', 'massSet', 'maximumProbabilityAtLeast', 'not', 'paired', 'parse', 'split',
+        'inspectAnswer', 'massSet', 'maximumProbabilityAtLeast', 'not', 'paired', 'parse', 'rank', 'split',
       ].sort());
       const parsed = api.parse({ model: 'synthetic', usage: { input_tokens: 0, output_tokens: 0 }, answers: {
         route: { type: 'choice', choice: 'a', confidence: 0.3, probabilities: { a: 0.64, b: 0.36 } },
         flag: { type: 'noul', noul: 0.9 },
         level: { type: 'score', score: 0.7, confidence: 0.2, legend: { 0: 'Low', 1: 'High' }, probabilities: { 0: 0.3, 1: 0.7 } },
       } });
-      assert.equal(parsed.answers.route.shape, 'paired');
+      assert.equal(parsed.answers.route.maximumProbability, 0.64);
       assert.equal(parsed.answers.flag.yes, 0.9);
       assert.equal(parsed.answers.level.expectedLevel, 0.7);
       assert.equal(api.analyze({ a: 1 }).is(api.dominant()), true);
       assert.equal(api.massSet({ a: 0.9, b: 0.1 }, 0.8).count, 1);
-      assert.equal(api.inspectAnswer({ ...parsed.answers.route.raw, confidence: null }).answer.shape, 'paired');
+      assert.deepEqual(api.rank({ a: 0.64, b: 0.36 }, { limit: 1 }), [{ option: 'a', probability: 0.64 }]);
+      assert.equal(api.inspectAnswer({ ...parsed.answers.route.raw, confidence: null }).answer.maximumProbability, 0.64);
       assert.equal(api.inspectAnswer({ type: 'noul', noul: 0.2 }).answer.no, 0.8);
       assert.equal(api.inspectAnswer({ ...parsed.answers.level.raw, confidence: null }).answer.expectedLevel, 0.7);
       assert.equal(api.inspectAnswer(undefined).kind, 'missing');

@@ -21,7 +21,8 @@ function probabilities(weights) {
 }
 
 function* cases() {
-  // Anchor every shape; randomized families exercise different support and tail geometry.
+  // Anchor a spread of concentration profiles; randomized families exercise different
+  // support and tail geometry.
   for (const [index, weights] of [
     [91, 5, 3, 1],
     [64, 25, 7, 4],
@@ -30,7 +31,7 @@ function* cases() {
     [28, 26, 24, 22],
     [60, 10, 10, 10, 10],
   ].entries())
-    yield { label: `shape-anchor-${index}`, input: probabilities(weights) };
+    yield { label: `anchor-${index}`, input: probabilities(weights) };
   const random = randomSource(SEED);
   for (let index = 0; index < 120; index++) {
     const size = 1 + Math.floor(random() * 48);
@@ -81,7 +82,6 @@ const names = (items) => items.map((item) => item.option).sort();
 const plain = (result) => JSON.parse(JSON.stringify(result));
 function numericView(result) {
   return {
-    shape: result.shape,
     profile: result.profile,
     metrics: result.metrics,
     maximumProbability: result.maximumProbability,
@@ -362,53 +362,16 @@ test('distinct-probability mass sets are minimal within the declared numerical t
   }
 });
 
-test('every assigned shape satisfies its structural guarantees and declared precedence', () => {
-  const observed = new Set();
+test('core observations are invariant to prominenceRatio and targetMass, which only affect groupings', () => {
   checkCases((input) => {
     const result = analyze(input);
-    const p = result.sorted.map((item) => item.probability);
-    const positive = p.filter((value) => value > 0);
-    const slack = 1e-10; // Generated fixtures are away from non-exact threshold boundaries.
-    const high = (a, b) => a >= b - slack;
-    const significant = positive.filter((value) => high(value / p[0], 0.5));
-    const rules = {
-      dominant: result.uniqueMaximum !== null && high(p[0], 0.8) && high(result.gap, 0.2),
-      flat: positive.length >= 3 && high(positive.at(-1) / p[0], 0.75),
-      clustered: significant.length >= 3 && high(sum(significant), 0.75),
-      split: p.length >= 2 && result.gap <= 0.1 + slack && high(sum(p.slice(0, 2)), 0.75),
-      paired:
-        result.uniqueMaximum !== null &&
-        p.length >= 2 &&
-        high(p[0], 0.5) &&
-        high(p[1], 0.2) &&
-        high(result.gap, 0.15),
-    };
-    // This oracle uses the published inequalities, not the exported predicates.
-    const expected = Object.keys(rules).find((shape) => rules[shape]) ?? 'mixed';
-    assert.equal(result.shape, expected);
-    if (result.shape === 'dominant' || result.shape === 'paired') {
-      assert.ok(result.uniqueMaximum);
-      assert.equal(result.maxima.length, 1);
-      assert.equal(result.uniqueMaximum, result.first);
-    }
-    if (result.shape === 'paired' || result.shape === 'split') {
-      assert.deepEqual(result.pair, result.sorted.slice(0, 2));
-      assert.equal(result.pair[0], result.first);
-      assert.equal(result.pair[1], result.second);
-    }
     const custom = analyze(input, { prominenceRatio: 0.99, targetMass: 0.31 });
-    assert.equal(custom.shape, result.shape);
     assert.deepEqual(custom.metrics, result.metrics);
-    observed.add(result.shape);
+    assert.equal(custom.gap, result.gap);
+    assert.equal(custom.maximumProbability, result.maximumProbability);
+    assert.equal(custom.secondProbability, result.secondProbability);
+    assert.deepEqual(custom.maxima, result.maxima);
   });
-  assert.deepEqual([...observed].sort(), [
-    'clustered',
-    'dominant',
-    'flat',
-    'mixed',
-    'paired',
-    'split',
-  ]);
 });
 
 test('analysis and mass selection leave frozen inputs and options unchanged', () => {

@@ -1,10 +1,6 @@
 # Changelog
 
-## Unreleased
-
-- Report `input.normalized` only once a distribution's total differs from 1 beyond a new, declared `normalizedAbsolute` tolerance (1e-12), surfaced under `profile.numericTolerances`. Summation-order float noise (e.g. `analyze({ a: 0.1, b: 0.2, c: 0.7 })`) no longer reports normalization; deliberate drift within the existing 1e-8 input-sum tolerance still does. Rescaling remains unconditional. `descriptive-v2` shape thresholds and precedence are unchanged.
-- Build Choice answers (`readAnswer`/`parse`) without mutating an already-returned Distribution: `is()`/`match()` on a Choice answer now close over the one object constructed with its `type`/`choice`/`confidence`/`raw` fields already in place, rather than a plain Distribution that later had those fields assigned onto it. Observable behavior, including reference identity seen by `match()` handlers, is unchanged.
-- Remove `match()`'s internal type cast. `MatchHandlers<Option>` gains a second, defaulted type parameter (`MatchHandlers<Option, R extends ShapeResults = ShapeResults>`) so its return types can be inferred per shape without one; existing `MatchHandlers<Option>` usage is unaffected. Add and export `ShapeResults`. `match()`'s inferred return type (mixed unions, per-shape narrowing, exhaustiveness, promise preservation) is unchanged.
+Changesets now generates this file's entries from `.changeset/`; see the pending release notes there until the next version is cut.
 
 ## 0.2.0 — 2026-09-23
 

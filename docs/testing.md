@@ -37,11 +37,12 @@ Unit suites import implementation modules so a parser edit does not mark every m
 
 | Contract | Evidence |
 | --- | --- |
-| Shapes and measurements | `test/distribution.test.mjs`, `test/match.test.mjs` |
+| Observations and measurements | `test/distribution.test.mjs` |
+| Ranking | `test/rank.test.mjs`: order, ties, permutation invariance, exclude/limit, validation |
 | Seeded mathematical invariants | `test/properties.test.mjs`: conservation, ordering, invariance, effective counts and mass sets |
 | Numeric boundaries | `test/boundaries.test.mjs`: below/at/above defaults and custom thresholds, tolerances and invalid options |
 | Jev wire compatibility | `test/jev.test.mjs`, `test/jev-contract.test.mjs`: all answer kinds, generated inputs, malformed values, snapshots and unusual keys |
-| Matching and composition | `test/match-contract.test.mjs`: values/promises/errors, dispatch and predicate order |
+| Structural predicates | `test/predicates.test.mjs`: overlap, composition, short-circuit, error propagation, threshold validation |
 | Type ergonomics | `test/types.test.ts`, `test/type-contracts.test.ts`: exact inferred unions, narrowing, readonly access and expected compiler errors |
 | Selection correctness | `test/tooling/*.test.mjs`: Git manifest, category policy and dry-run CLI contracts |
 | Package correctness | `test/package/consumer.mjs`: native Node checks of the installed tarball |

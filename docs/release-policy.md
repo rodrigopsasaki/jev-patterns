@@ -6,7 +6,7 @@
 
 Names, fields, nullability, inferred types, validation, threshold defaults, precedence and numerical tolerances are public behavior. Review them as API changes. Every release records relevant behavior changes in CHANGELOG.md with migration guidance where needed.
 
-Before 1.0, breaking API changes require a minor-version increment; compatible fixes use a patch increment. Starting at 1.0, breaking changes require a major increment. Do not silently retune descriptive rules in a patch. Changes to shape interpretation or numerical policy also require a new profile identifier so stored results retain their provenance.
+Before 1.0, breaking API changes require a minor-version increment; compatible fixes use a patch increment. Starting at 1.0, breaking changes require a major increment. Do not silently retune descriptive rules in a patch. Changes to observation semantics or numerical policy require a new profile identifier so stored results retain their provenance. Structural predicate defaults (`dominant`'s floor, `clustered`'s ratio, and so on) are the predicates' own parameters, not part of the profile, and may change independently; see the v0.3 removal of the named-shape classification layer in [the proposal](docs/proposal.md).
 
 The package ships ESM JavaScript and TypeScript declarations. The current support floor is Node 24.14 and TypeScript 5.9.3. CommonJS-specific builds, older engines and browser bundlers are not claimed as supported without dedicated runtime checks. Bundler-mode type resolution is tested separately.
 
