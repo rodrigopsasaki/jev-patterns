@@ -27,9 +27,23 @@ export function atLeast(actual: number, threshold: number): boolean {
   );
 }
 
+/**
+ * Two scores are the same score exactly when `atLeast` can't tell them apart in either
+ * direction — the same relative tolerance coverage's threshold comparison already uses.
+ * No second tolerance: this is derived from `atLeast`, never a fresh constant.
+ */
+export function sameScore(a: number, b: number): boolean {
+  return atLeast(a, b) && atLeast(b, a);
+}
+
 export function requireProbability(value: number, name: string): number {
   if (!Number.isFinite(value) || value < 0 || value > 1) {
     throw new TypeError(`${name} must be finite and in [0, 1]`);
   }
   return value;
+}
+
+/** Clamp a value that the math should already keep in [0, 1] but float rounding can nudge past. */
+export function bounded(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }

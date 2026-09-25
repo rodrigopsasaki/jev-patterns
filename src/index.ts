@@ -23,6 +23,16 @@ export type {
 } from './jev.ts';
 export { parse } from './jev.ts';
 export type {
+  CoveredThresholdPoint,
+  EmptyThresholdPoint,
+  MeasureThresholdsOptions,
+  ThresholdMeasurement,
+  ThresholdObservation,
+  ThresholdPoint,
+  WilsonInterval,
+} from './measure-thresholds.ts';
+export { measureThresholds } from './measure-thresholds.ts';
+export type {
   Distribution,
   DistributionData,
   MassSet,

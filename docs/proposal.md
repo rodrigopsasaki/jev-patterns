@@ -18,6 +18,8 @@ Separately, the first real consumer of this library hand-rolled, twice, the patt
 
 The profile id is now `descriptive-v3`. Predicate default thresholds (`dominant`'s floor, `clustered`'s ratio, and so on) moved out of `profile` and now live only next to each predicate factory in `src/predicates.ts`: with no classification decision left to version, they are the predicates' own opt-in parameters, not analysis output, so publishing them on `profile` no longer earned its place.
 
+`measureThresholds(observations, options?)` adds an empirical measurement boundary without adding an application decision. Given caller-labeled scores, it reports coverage, correct counts, precision, Wilson score intervals, and AUROC for explicit floors or every observed score. The caller still chooses the floor, and measurements must be repeated when the judge model or version changes; the API does not calibrate scores or recommend an action.
+
 ## Authority boundary
 
 Jev supplies probabilities over allowed answers. The library measures and describes their geometry. Application code assigns domain names and actions. The library does not determine whether a choice is correct, safe or acceptable. A concentrated distribution can still be wrong, and all offered options can be wrong.
