@@ -269,7 +269,7 @@ test(`the packed ESM package passes ${full ? 'full contracts' : 'smoke checks'}`
       import * as api from 'jev-patterns';
       assert.deepEqual(Object.keys(api).sort(), [
         'allOf', 'analyze', 'anyOf', 'clustered', 'dominant', 'flat', 'gapAtLeast',
-          'inspectAnswer', 'massSet', 'maximumProbabilityAtLeast', 'measureThresholds', 'not', 'paired', 'parse', 'rank', 'split',
+        'inspectAnswer', 'massSet', 'maximumProbabilityAtLeast', 'measureThresholds', 'not', 'paired', 'parse', 'rank', 'split',
       ].sort());
       const parsed = api.parse({ model: 'synthetic', usage: { input_tokens: 0, output_tokens: 0 }, answers: {
         route: { type: 'choice', choice: 'a', confidence: 0.3, probabilities: { a: 0.64, b: 0.36 } },
