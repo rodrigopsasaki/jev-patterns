@@ -2,6 +2,12 @@
 
 Changesets now generates this file's entries from `.changeset/`; see the pending release notes there until the next version is cut.
 
+## 0.4.0
+
+### Minor Changes
+
+- 6157716: Add `measureThresholds()` for measuring coverage, correctness, precision, Wilson score intervals, and AUROC across caller-supplied score floors. The caller remains responsible for choosing a floor and re-validating it for each judge model.
+
 ## 0.3.3
 
 ### Patch Changes
