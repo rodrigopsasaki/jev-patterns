@@ -1,0 +1,61 @@
+interlock: debrief@v2
+graph: measure-thresholds
+node: measure-thresholds
+role: worker
+graph_base_sha: 6079acb8d4d645834f75643624fdfe004b2655b4
+session_start_sha: 97825b7eb134def2428d6ef8fee7ce106e116a49
+head_sha: abbe7ad97e637d8719c0e5164d24fd282bea93b1
+derivation:
+  kind: agent
+  runtime: codex
+  model: gpt-5.6-luna
+discoveries:
+  - id: d1
+    what: Threshold coverage deliberately uses the library's tolerant score comparison, so a score on the declared numeric boundary is measured consistently with the rest of the package.
+    found_at: 'src/measure-thresholds.ts:127 "const covered = observations.filter((observation) => atLeast(observation.score, threshold));"'
+    mattered_because: Future changes to threshold tolerance can change measured coverage and must be treated as observable behavior.
+    applies_to: { kind: path, path: src/measure-thresholds.ts }
+  - id: d2
+    what: The public documentation keeps floor selection with the caller and warns that a measured floor does not transfer between judge models or versions.
+    found_at: 'README.md:224 "This is a measurement, not a recommendation: the caller chooses a floor based on the costs and needs of the application. A floor measured on one judge model or version does not transfer to another without re-validation."'
+    mattered_because: The measurement API remains descriptive and does not smuggle an application action or calibration claim into the library.
+    applies_to: { kind: path, path: README.md }
+decisions:
+  - id: d1
+    what: Add a standalone public measureThresholds API with explicit observations, caller thresholds, deterministic ordering, precision, Wilson intervals, and AUROC, while leaving floor selection outside the library.
+    because: The graph contract asks for an empirical tradeoff surface and explicitly excludes recommending or selecting a threshold.
+    rests_on:
+      - .interlock/graphs/measure-thresholds.yaml
+      - src/numeric.ts
+      - src/validation.ts
+    hunks:
+      - src/measure-thresholds.ts:4-171
+      - src/index.ts:25-34
+      - test/measure-thresholds.test.mjs:1-171
+  - id: d2
+    what: Model empty and covered threshold points as a kind-discriminated union, with interval and precision required only for covered points.
+    because: A numeric count type cannot express strictly positive numbers, while the contract requires illegal empty/covered states to be unrepresentable to TypeScript consumers.
+    rests_on:
+      - .interlock/graphs/measure-thresholds.yaml
+      - src/measure-thresholds.ts:14-32
+    hunks:
+      - src/measure-thresholds.ts:14-32
+      - test/type-contracts.test.ts:188-209
+gates_run_by_agent:
+  - id: tests
+    result: pass
+    invocation: npm test
+    note: 12 test files and 211 tests passed.
+  - id: whitespace
+    result: pass
+    invocation: git diff --check
+    note: No whitespace errors were reported.
+  - id: check-full
+    result: pass
+    invocation: npm run check:full
+    note: Biome, both type configurations, 100% coverage, and 23 installed-package contracts passed.
+  - id: floors-reproduced
+    result: pass
+    invocation: node /Users/rodrigosasaki/dev/private/jev-local-bench/shape-eval/src/reproduce-floors.ts ./src/index.ts
+    note: 'The independent recorded-data reference printed floors reproduced: 3/3.'
+open: []
