@@ -42,3 +42,8 @@
   what: The first commit attempt failed because inherited GPG signing could not create its keybox lock file outside the workspace.
   evidence: "git commit reported gpg: failed to create temporary file '/Users/rodrigosasaki/.gnupg/...': Operation not permitted"
   response: Retry with git -c commit.gpgsign=false for this commit only, leaving global and repository configuration unchanged.
+- id: full-verification
+  kind: evidence
+  what: The committed implementation passes the release verification suite.
+  evidence: "npm run check:full: Biome clean; both type configurations clean; 211 Vitest tests; 100% statements, branches, functions, and lines; 23 installed-package contracts passed"
+  mattered_because: The public API, package exports, README examples, and declarations are verified together after the source commit.
