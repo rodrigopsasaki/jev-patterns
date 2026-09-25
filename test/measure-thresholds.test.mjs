@@ -123,6 +123,54 @@ test('computes AUROC as the probability a correct score outscores an incorrect s
   );
 });
 
+test('treats scores within the shared tolerance as tied in AUROC, consistent with coverage', () => {
+  // 0.1 + 0.2 === 0.30000000000000004, not 0.3, by float noise alone. `atLeast` (and
+  // therefore coverage) already treats that gap as no gap at all; AUROC must agree,
+  // scoring it as a half-win tie rather than a full win for the larger float value.
+  const auroc = measureThresholds([
+    { score: 0.1 + 0.2, correct: true },
+    { score: 0.3, correct: false },
+  ]).auroc;
+  assert.equal(auroc, 0.5);
+});
+
+test('clamps Wilson interval bounds to [0, 1] despite float rounding at p = 1 and p = 0', () => {
+  const coveredCounts = [1, 15, 19, 23, 26, 30, 31, 37, 42, 45, 53, 59, 60, 100];
+  for (const covered of coveredCounts) {
+    const allCorrect = Array.from({ length: covered }, () => ({ score: 0.9, correct: true }));
+    const [pointAllCorrect] = measureThresholds(allCorrect, { thresholds: [0.9] }).thresholds;
+    assert.equal(pointAllCorrect.precision, 1);
+    const { lower, upper } = pointAllCorrect.interval;
+    assert.ok(
+      0 <= lower && lower <= upper && upper <= 1,
+      `[${lower}, ${upper}] at covered=${covered}`,
+    );
+
+    const allIncorrect = Array.from({ length: covered }, () => ({ score: 0.9, correct: false }));
+    const [pointAllIncorrect] = measureThresholds(allIncorrect, { thresholds: [0.9] }).thresholds;
+    assert.equal(pointAllIncorrect.precision, 0);
+    const { lower: lower0, upper: upper0 } = pointAllIncorrect.interval;
+    assert.ok(
+      0 <= lower0 && lower0 <= upper0 && upper0 <= 1,
+      `[${lower0}, ${upper0}] at covered=${covered}`,
+    );
+  }
+
+  // At these exact covered counts the unclamped centre + margin formula lands a float
+  // hair past the boundary (verified against the raw, unclamped arithmetic); clamping
+  // must snap to the exact boundary value, not merely to something close to it.
+  for (const covered of [19, 23, 26, 37, 42, 45, 59]) {
+    const allCorrect = Array.from({ length: covered }, () => ({ score: 0.9, correct: true }));
+    const [point] = measureThresholds(allCorrect, { thresholds: [0.9] }).thresholds;
+    assert.equal(point.interval.upper, 1);
+  }
+  for (const covered of [15, 30, 31, 53, 59, 60]) {
+    const allIncorrect = Array.from({ length: covered }, () => ({ score: 0.9, correct: false }));
+    const [point] = measureThresholds(allIncorrect, { thresholds: [0.9] }).thresholds;
+    assert.equal(point.interval.lower, 0);
+  }
+});
+
 test('is invariant to observation permutation and preserves the caller input', () => {
   const input = labeled.map((observation) => ({ ...observation }));
   const reversed = [...input].reverse();

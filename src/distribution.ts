@@ -6,7 +6,7 @@ import type {
   Outcome,
   RankOptions,
 } from './model.ts';
-import { atLeast, numericTolerances } from './numeric.ts';
+import { atLeast, bounded, numericTolerances } from './numeric.ts';
 import { InputIssue } from './validation.ts';
 
 /** Describe a normalized probability map with transparent, versioned heuristics. */
@@ -240,9 +240,6 @@ function requireFraction(value: number, name: string) {
 
 function sum(values: readonly number[]): number {
   return values.reduce((total, value) => total + value, 0);
-}
-function bounded(value: number): number {
-  return Math.min(1, Math.max(0, value));
 }
 function tied(a: number, b: number): boolean {
   return Math.abs(a - b) <= numericTolerances.tieAbsolute;

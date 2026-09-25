@@ -1,4 +1,4 @@
-import { atLeast } from './numeric.ts';
+import { atLeast, bounded, sameScore } from './numeric.ts';
 import { InputIssue, object } from './validation.ts';
 
 export interface ThresholdObservation {
@@ -149,8 +149,8 @@ function calculateAuroc(observations: readonly ThresholdObservation[]): number |
   let wins = 0;
   for (const right of correct) {
     for (const wrong of incorrect) {
-      if (right.score > wrong.score) wins += 1;
-      else if (right.score === wrong.score) wins += 0.5;
+      if (sameScore(right.score, wrong.score)) wins += 0.5;
+      else if (right.score > wrong.score) wins += 1;
     }
   }
   return wins / (correct.length * incorrect.length);
@@ -167,5 +167,5 @@ function wilsonInterval(correct: number, covered: number): WilsonInterval {
         ((correct / covered) * (1 - correct / covered) + zSquared / (4 * covered)) / covered,
       )) /
     denominator;
-  return { lower: centre - margin, upper: centre + margin };
+  return { lower: bounded(centre - margin), upper: bounded(centre + margin) };
 }
