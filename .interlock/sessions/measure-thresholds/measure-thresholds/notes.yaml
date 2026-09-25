@@ -47,3 +47,8 @@
   what: The committed implementation passes the release verification suite.
   evidence: "npm run check:full: Biome clean; both type configurations clean; 211 Vitest tests; 100% statements, branches, functions, and lines; 23 installed-package contracts passed"
   mattered_because: The public API, package exports, README examples, and declarations are verified together after the source commit.
+- id: debrief-candidate-path-surprise
+  kind: surprise
+  what: Interlock rejected the requested test/.runs candidate path because debrief prepare enforces the session directory.
+  evidence: "interlock debrief prepare reported that test/.runs/measure-thresholds-debrief.yaml escapes this session directory"
+  response: Use a temporary candidate beside the session brief for the mandated prepare/author/file flow, then remove only that candidate with plain rm after filing.
