@@ -4,12 +4,16 @@ import {
   type Distribution,
   type JevAnswer,
   type JevResponse,
+  measureThresholds,
   type NoulAnswer,
   type Outcome,
   type ParsedAnswer,
   parse,
   rank,
   type ScoreAnswer,
+  type ThresholdMeasurement,
+  type ThresholdObservation,
+  type ThresholdPoint,
 } from '../src/index.ts';
 
 type Equal<Left, Right> =
@@ -179,4 +183,28 @@ export function unionAnswerContracts(
     void directions;
   }
   void preserved;
+}
+
+export function thresholdMeasurementContracts(
+  observations: readonly ThresholdObservation[],
+): ThresholdMeasurement {
+  const measurement = measureThresholds(observations);
+  const point: ThresholdPoint | undefined = measurement.thresholds[0];
+  if (point?.kind === 'covered') {
+    const precision: number = point.precision;
+    const lower: number = point.interval.lower;
+    const upper: number = point.interval.upper;
+    void [precision, lower, upper];
+    // @ts-expect-error Covered points always have a non-empty state.
+    const impossible: 0 = point.covered;
+    void impossible;
+  } else if (point?.kind === 'empty') {
+    const covered: 0 = point.covered;
+    void covered;
+    // @ts-expect-error Empty points never expose precision.
+    point.precision;
+    // @ts-expect-error Empty points never expose an interval.
+    point.interval;
+  }
+  return measurement;
 }

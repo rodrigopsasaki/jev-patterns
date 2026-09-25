@@ -202,6 +202,27 @@ const topCause = rank(probabilities, { exclude: ['other'], limit: 1 })[0];
 
 `rank()` orders any map of probability-like scores in `[0, 1]`; unlike `analyze()`/`massSet()`, it does not require the map to be normalized. Ordering is invariant to scale, so `rank()` accepts unnormalized judge estimates (a model only asked to roughly sum to 1) as well as full distributions, and an empty map ranks to `[]`. Values come back exactly as given — never rescaled — and tie order matches `analyze()`/`massSet()` (probability descending, then option key ascending). It does not renormalize after exclusion: the remaining entries keep their original probability, exclusion just filters which entries appear. There is no separate "top-1 excluding X" helper; that is `rank(p, { exclude, limit: 1 })[0]`. With a typed probability map, excluding a literal option name outside its keys is a compile error, not a silent no-op; an untyped map has no closed vocabulary to check an excluded label against, so an absent label is silently ignored.
 
+### Measure a floor on labeled answers
+
+When an application has labeled answers for a particular judge model, `measureThresholds()` describes the tradeoff at each score floor. It reports how many answers remain covered, how often those answers were correct, their precision, and a Wilson 95% score interval. It also reports AUROC as the probability that a correct answer's score outranks an incorrect answer's score, with ties receiving half credit.
+
+<!-- example:thresholds -->
+```ts
+import { measureThresholds } from 'jev-patterns';
+
+const measurement = measureThresholds([
+  { score: 0.92, correct: true },
+  { score: 0.81, correct: false },
+  { score: 0.63, correct: true },
+  { score: 0.41, correct: false },
+], { thresholds: [0.6, 0.8, 0.9] });
+
+measurement.thresholds[1];
+// { threshold: 0.8, covered: 2, coverage: 0.5, correct: 1, ... }
+```
+
+This is a measurement, not a recommendation: the caller chooses a floor based on the costs and needs of the application. A floor measured on one judge model or version does not transfer to another without re-validation. The library does not claim that a score is calibrated or that a covered answer is safe to use.
+
 ### Express a structural policy with no assumed predictive value
 
 The predicate factories below (`dominant`, `paired`, `split`, `clustered`, `flat`) are structural tests over a distribution's shape. **They have no demonstrated predictive value for answer correctness on their own** — see [why](#why-v03-removed-the-named-shapes) above. If you want to gate a real decision on one, validate it against your own labeled data first.
@@ -240,6 +261,7 @@ Score levels are ordered. A categorical view by itself cannot distinguish probab
 | `.is(predicate)` | Test structure using a supplied function. |
 | `massSet(probabilities, targetMass)` | Keep a ranked prefix reaching a requested mass within numeric tolerance, retaining boundary ties. |
 | `rank(probabilities, options?)` | Order any `[0, 1]`-valued map by probability, normalized or not; optionally `exclude` labels and `limit` to the top N, without renormalizing. |
+| `measureThresholds(observations, options?)` | Measure coverage, correctness, precision, Wilson intervals, and AUROC across caller-supplied score floors. |
 
 `sorted`, `first`, `second`, `maxima`, `uniqueMaximum`, and `gap` expose rank and ties. Sorting tied entries never creates a unique maximum. `prominent` groups positive-probability outcomes at least a configurable fraction of the maximum, within numeric tolerance; `massSet` groups by accumulated mass; `rank` returns the same deterministic order as a plain list, optionally filtered and truncated.
 
